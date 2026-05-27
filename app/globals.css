@@ -27,22 +27,11 @@
   --shadow: rgba(255, 20, 147, 0.4);
 }
 
-html {
-  scroll-behavior: smooth;
-  scroll-padding-top: 80px;
-}
-
 html, body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-body);
   transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
 }
 
 /* Grain texture overlay */
@@ -115,4 +104,127 @@ html, body {
 .dotgrid {
   background-image: radial-gradient(circle, rgba(255, 20, 147, 0.15) 1px, transparent 1px);
   background-size: 24px 24px;
+}
+
+/* ============================================================
+   HERO ANIMATIONS
+   ============================================================ */
+
+/* Entrance: fade + slide up, staggered via delay classes */
+@keyframes enter-fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.enter-fade {
+  opacity: 0;
+  animation: enter-fade-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.enter-d-0 { animation-delay: 0.05s; }
+.enter-d-1 { animation-delay: 0.20s; }
+.enter-d-2 { animation-delay: 0.40s; }
+.enter-d-3 { animation-delay: 0.60s; }
+.enter-d-4 { animation-delay: 0.80s; }
+
+/* Soft, continuous glow under the main headline.
+   It's a layered text-shadow rather than animated to avoid flicker. */
+.headline-glow {
+  text-shadow:
+    0 0 30px rgba(255, 20, 147, 0.25),
+    0 0 60px rgba(255, 20, 147, 0.15);
+}
+
+/* Floating orbs - sutle ambient movement, doesn't compete with content.
+   Each orb has a different size, position and animation duration so they
+   don't feel synchronized. */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+.orb-1 {
+  width: 120px;
+  height: 120px;
+  background: #FF1493;
+  top: 15%;
+  left: 8%;
+  animation: float-orb 14s ease-in-out infinite;
+}
+.orb-2 {
+  width: 80px;
+  height: 80px;
+  background: #FF66B2;
+  top: 60%;
+  left: 75%;
+  animation: float-orb 18s ease-in-out infinite reverse;
+}
+.orb-3 {
+  width: 60px;
+  height: 60px;
+  background: #FF1493;
+  top: 30%;
+  right: 25%;
+  animation: float-orb 22s ease-in-out infinite;
+  animation-delay: -4s;
+}
+.orb-4 {
+  width: 100px;
+  height: 100px;
+  background: #FF99CC;
+  top: 75%;
+  left: 20%;
+  animation: float-orb 16s ease-in-out infinite reverse;
+  animation-delay: -2s;
+  opacity: 0.25;
+}
+.orb-5 {
+  width: 50px;
+  height: 50px;
+  background: #FF1493;
+  top: 8%;
+  right: 35%;
+  animation: float-orb 20s ease-in-out infinite;
+  animation-delay: -7s;
+}
+
+@keyframes float-orb {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -20px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 25px) scale(0.95);
+  }
+}
+
+/* Terminal cursor blink — slightly slower than before to feel less hectic */
+.terminal-cursor {
+  animation: blink 1.2s steps(2) infinite;
+}
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .enter-fade,
+  .orb,
+  .terminal-cursor,
+  .animate-pulse-pink,
+  .marquee-track {
+    animation: none;
+  }
+  .enter-fade {
+    opacity: 1;
+  }
 }
