@@ -27,6 +27,11 @@
   --shadow: rgba(255, 20, 147, 0.4);
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+
 html, body {
   background: var(--bg);
   color: var(--fg);
@@ -217,6 +222,9 @@ html, body {
 
 /* Respect reduced-motion preference */
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
   .enter-fade,
   .orb,
   .terminal-cursor,
