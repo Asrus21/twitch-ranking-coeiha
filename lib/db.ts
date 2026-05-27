@@ -1,3 +1,4 @@
+
 import { neon, type NeonQueryFunction } from '@neondatabase/serverless';
 
 let _sql: NeonQueryFunction<false, false> | null = null;
@@ -48,6 +49,13 @@ function ensureSchema(): Promise<void> {
         CREATE TABLE IF NOT EXISTS meta (
           key   TEXT PRIMARY KEY,
           value TEXT
+        )
+      `;
+      await getSql()`
+        CREATE TABLE IF NOT EXISTS settings (
+          key   TEXT PRIMARY KEY,
+          value TEXT NOT NULL,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
       `;
       await getSql()`CREATE INDEX IF NOT EXISTS pontos_points_idx ON pontos (points DESC)`;
@@ -129,4 +137,50 @@ export async function getMeta(): Promise<Meta> {
     SELECT value FROM meta WHERE key = 'last_reset' LIMIT 1
   `) as { value: string | null }[];
   return { lastReset: rows[0]?.value ?? null };
+}
+
+export type AboutSettings = {
+  textPt: string | null;
+  textEn: string | null;
+  imageUrl: string | null;
+  imagePosition: string | null; // CSS object-position value like "50% 30%"
+};
+
+export async function getAboutSettings(): Promise<AboutSettings> {
+  await ensureSchema();
+  const rows = (await getSql()`
+    SELECT key, value FROM settings
+    WHERE key IN ('about_text_pt', 'about_text_en', 'about_image_url', 'about_image_position')
+  `) as Array<{ key: string; value: string }>;
+
+  const map = new Map(rows.map((r) => [r.key, r.value]));
+  return {
+    textPt: map.get('about_text_pt') ?? null,
+    textEn: map.get('about_text_en') ?? null,
+    imageUrl: map.get('about_image_url') ?? null,
+    imagePosition: map.get('about_image_position') ?? null,
+  };
+}
+
+export async function updateAboutSettings(
+  patch: Partial<AboutSettings>
+): Promise<void> {
+  await ensureSchema();
+  const entries: Array<[string, string]> = [];
+  if (patch.textPt !== undefined && patch.textPt !== null)
+    entries.push(['about_text_pt', patch.textPt]);
+  if (patch.textEn !== undefined && patch.textEn !== null)
+    entries.push(['about_text_en', patch.textEn]);
+  if (patch.imageUrl !== undefined && patch.imageUrl !== null)
+    entries.push(['about_image_url', patch.imageUrl]);
+  if (patch.imagePosition !== undefined && patch.imagePosition !== null)
+    entries.push(['about_image_position', patch.imagePosition]);
+
+  for (const [key, value] of entries) {
+    await getSql()`
+      INSERT INTO settings (key, value, updated_at)
+      VALUES (${key}, ${value}, NOW())
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+    `;
+  }
 }
