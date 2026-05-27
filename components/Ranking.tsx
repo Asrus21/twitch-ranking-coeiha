@@ -51,7 +51,7 @@ export function Ranking() {
     setResetting(true);
     setResetMsg(null);
     try {
-      const res = await fetch('/api/reset', {
+      const res = await fetch('/api/coeiha/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
