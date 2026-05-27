@@ -11,6 +11,13 @@ import { translations, type Lang, type Translations } from '@/lib/i18n';
 
 type Theme = 'light' | 'dark';
 
+export type AboutData = {
+  textPt: string | null;
+  textEn: string | null;
+  imageUrl: string | null;
+  imagePosition: string | null;
+};
+
 type Ctx = {
   theme: Theme;
   setTheme: (t: Theme) => void;
@@ -19,22 +26,41 @@ type Ctx = {
   setLang: (l: Lang) => void;
   toggleLang: () => void;
   t: Translations;
+  // about content (editable by admin)
+  about: AboutData;
+  refreshAbout: () => Promise<void>;
+  // admin session
+  adminPassword: string | null;
+  isAdmin: boolean;
+  adminLogin: (password: string) => Promise<boolean>;
+  adminLogout: () => void;
 };
 
 const Context = createContext<Ctx | null>(null);
+
+const DEFAULT_ABOUT: AboutData = {
+  textPt: null,
+  textEn: null,
+  imageUrl: null,
+  imagePosition: null,
+};
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('light');
   const [lang, setLangState] = useState<Lang>('pt');
   const [mounted, setMounted] = useState(false);
+  const [about, setAbout] = useState<AboutData>(DEFAULT_ABOUT);
+  const [adminPassword, setAdminPassword] = useState<string | null>(null);
 
   useEffect(() => {
     const storedTheme = localStorage.getItem('theme') as Theme | null;
     const storedLang = localStorage.getItem('lang') as Lang | null;
+    const storedAdmin = sessionStorage.getItem('coeiha_admin');
     if (storedTheme) setThemeState(storedTheme);
     else if (window.matchMedia('(prefers-color-scheme: dark)').matches)
       setThemeState('dark');
     if (storedLang === 'en' || storedLang === 'pt') setLangState(storedLang);
+    if (storedAdmin) setAdminPassword(storedAdmin);
     setMounted(true);
   }, []);
 
@@ -49,6 +75,45 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.lang = lang === 'en' ? 'en' : 'pt-BR';
     localStorage.setItem('lang', lang);
   }, [lang, mounted]);
+
+  const refreshAbout = useCallback(async () => {
+    try {
+      const res = await fetch('/api/coeiha/about', { cache: 'no-store' });
+      if (res.ok) {
+        const data = (await res.json()) as AboutData;
+        setAbout(data);
+      }
+    } catch (e) {
+      console.error('[refreshAbout]', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshAbout();
+  }, [refreshAbout]);
+
+  const adminLogin = useCallback(async (password: string) => {
+    try {
+      const res = await fetch('/api/coeiha/admin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      if (res.ok) {
+        setAdminPassword(password);
+        sessionStorage.setItem('coeiha_admin', password);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const adminLogout = useCallback(() => {
+    setAdminPassword(null);
+    sessionStorage.removeItem('coeiha_admin');
+  }, []);
 
   const setTheme = useCallback((t: Theme) => setThemeState(t), []);
   const toggleTheme = useCallback(
@@ -71,6 +136,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setLang,
         toggleLang,
         t: translations[lang],
+        about,
+        refreshAbout,
+        adminPassword,
+        isAdmin: adminPassword !== null,
+        adminLogin,
+        adminLogout,
       }}
     >
       {children}
