@@ -20,7 +20,7 @@ export function Live() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch('/api/twitch-status', { cache: 'no-store' });
+        const res = await fetch('/api/coeiha/twitch-status', { cache: 'no-store' });
         if (res.ok) setStatus(await res.json());
       } catch (e) {
         console.error(e);
