@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { recordPonto } from '@/lib/kv';
+import { recordPonto } from '@/lib/db';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 // CORS so the StreamElements widget (different origin) can call us
 const CORS_HEADERS = {
