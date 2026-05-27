@@ -65,7 +65,7 @@ export const translations: Record<Lang, Dict> = {
     about: {
       title: 'Sobre',
       placeholder:
-        'Texto sobre a streamer aparece aqui. Em breve um texto incrível contando a história, o que ela joga, os horários da live e tudo o que faz o canal ser único.',
+        'Sou streamer há cerca de 5 anos, apaixonada por jogos de todos os tipos e por animes. Amo compartilhar essa paixão nas lives junto com meu chat. 💖',
       stats: {
         commands: 'Comando',
         live: 'Plataforma',
@@ -123,7 +123,7 @@ export const translations: Record<Lang, Dict> = {
     about: {
       title: 'About',
       placeholder:
-        'Streamer bio appears here. Coming soon — an amazing text about the channel, the games, the schedule, and everything that makes this community special.',
+        "I've been streaming for around 5 years — passionate about all kinds of games and anime. I love sharing that passion on stream with my chat. 💖",
       stats: {
         commands: 'Command',
         live: 'Platform',
