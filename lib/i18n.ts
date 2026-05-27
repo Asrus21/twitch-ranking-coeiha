@@ -44,6 +44,31 @@ type Dict = {
     viewers: string;
     game: string;
   };
+  admin: {
+    title: string;
+    login: string;
+    logout: string;
+    save: string;
+    saved: string;
+    saveError: string;
+    loginHint: string;
+    wrongPassword: string;
+    photoTitle: string;
+    uploadPhoto: string;
+    noImage: string;
+    posX: string;
+    posY: string;
+    imageTooLarge: string;
+    imageError: string;
+    textTitle: string;
+    textPt: string;
+    textEn: string;
+    textPlaceholder: string;
+    dangerZone: string;
+    showReset: string;
+    resetSuccess: string;
+    resetError: string;
+  };
   footer: { made: string; by: string };
 };
 
@@ -100,6 +125,31 @@ export const translations: Record<Lang, Dict> = {
       watch: 'Assistir na Twitch',
       viewers: 'espectadores',
       game: 'Jogo',
+    },
+    admin: {
+      title: 'Painel Admin',
+      login: 'Entrar',
+      logout: 'Sair',
+      save: 'Salvar alterações',
+      saved: 'Salvo!',
+      saveError: 'Erro ao salvar',
+      loginHint: 'Digite a senha admin para editar o site.',
+      wrongPassword: 'Senha incorreta',
+      photoTitle: 'Foto do Sobre',
+      uploadPhoto: 'Enviar nova foto',
+      noImage: 'sem imagem',
+      posX: 'Posição horizontal',
+      posY: 'Posição vertical',
+      imageTooLarge: 'Imagem muito grande (máx ~2MB)',
+      imageError: 'Erro ao processar imagem',
+      textTitle: 'Texto do Sobre',
+      textPt: 'Texto em Português',
+      textEn: 'Texto em Inglês',
+      textPlaceholder: 'Escreva o texto do Sobre aqui...',
+      dangerZone: 'Zona perigosa',
+      showReset: 'Mostrar opções de reset',
+      resetSuccess: 'Ranking resetado',
+      resetError: 'Erro ao resetar',
     },
     footer: {
       made: 'Feito com',
@@ -158,6 +208,31 @@ export const translations: Record<Lang, Dict> = {
       watch: 'Watch on Twitch',
       viewers: 'viewers',
       game: 'Game',
+    },
+    admin: {
+      title: 'Admin Panel',
+      login: 'Log in',
+      logout: 'Log out',
+      save: 'Save changes',
+      saved: 'Saved!',
+      saveError: 'Save failed',
+      loginHint: 'Enter the admin password to edit the site.',
+      wrongPassword: 'Wrong password',
+      photoTitle: 'About photo',
+      uploadPhoto: 'Upload new photo',
+      noImage: 'no image',
+      posX: 'Horizontal position',
+      posY: 'Vertical position',
+      imageTooLarge: 'Image too large (max ~2MB)',
+      imageError: 'Failed to process image',
+      textTitle: 'About text',
+      textPt: 'Portuguese text',
+      textEn: 'English text',
+      textPlaceholder: 'Write the About text here...',
+      dangerZone: 'Danger zone',
+      showReset: 'Show reset options',
+      resetSuccess: 'Ranking reset',
+      resetError: 'Reset failed',
     },
     footer: {
       made: 'Made with',
