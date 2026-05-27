@@ -1,94 +1,198 @@
 'use client';
 
+import { useCallback, useEffect, useState } from 'react';
 import { useApp } from './AppProvider';
 
-const DEFAULT_TEXT_PT =
-  'Sou streamer há cerca de 5 anos, apaixonada por jogos de todos os tipos e por animes. Amo compartilhar essa paixão nas lives junto com meu chat. 💖';
-const DEFAULT_TEXT_EN =
-  "I've been streaming for around 5 years — passionate about all kinds of games and anime. I love sharing that passion on stream with my chat. 💖";
+type RankingEntry = {
+  username: string;
+  displayName: string;
+  avatar: string;
+  points: number;
+};
 
-const DEFAULT_IMAGE = '/about.jpg';
-const DEFAULT_POSITION = '50% 35%'; // shows the face nicely on the default image
+type RankingData = {
+  ranking: RankingEntry[];
+  meta: { lastReset: string | null };
+};
 
-export function About() {
-  const { t, lang, about } = useApp();
+export function Ranking() {
+  const { t, lang } = useApp();
+  const [data, setData] = useState<RankingData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const text =
-    lang === 'pt'
-      ? about.textPt ?? DEFAULT_TEXT_PT
-      : about.textEn ?? DEFAULT_TEXT_EN;
-  const imageUrl = about.imageUrl ?? DEFAULT_IMAGE;
-  const position = about.imagePosition ?? DEFAULT_POSITION;
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch('/api/coeiha/ranking', { cache: 'no-store' });
+      if (res.ok) {
+        const json = await res.json();
+        setData(json);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+    const id = setInterval(load, 15_000);
+    return () => clearInterval(id);
+  }, [load]);
+
+  // Allow other components (like the admin panel after a reset) to trigger
+  // a refresh without prop drilling.
+  useEffect(() => {
+    const handler = () => load();
+    window.addEventListener('coeiha:refresh-ranking', handler);
+    return () => window.removeEventListener('coeiha:refresh-ranking', handler);
+  }, [load]);
+
+  const formatReset = (iso: string | null) => {
+    if (!iso) return t.ranking.never;
+    const d = new Date(iso);
+    return d.toLocaleString(lang === 'pt' ? 'pt-BR' : 'en-US', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const ranking = data?.ranking || [];
+  const podium = ranking.slice(0, 3);
+  const rest = ranking.slice(3);
 
   return (
-    <section id="about" className="relative py-24 md:py-32">
+    <section id="ranking" className="relative py-24 md:py-32 stripes">
       <div className="max-w-6xl mx-auto px-6">
-        {/* Title row */}
-        <div className="mb-12">
-          <div className="font-mono text-xs uppercase tracking-widest text-hotpink-500 mb-4">
-            ✦ 01
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12 gap-6">
+          <div>
+            <div className="font-mono text-xs uppercase tracking-widest text-hotpink-500 mb-4">
+              ✦ 02
+            </div>
+            <h2 className="font-display text-6xl md:text-7xl tracking-tight leading-none">
+              {t.ranking.title}
+            </h2>
+            <p className="text-lg text-[var(--fg-muted)] mt-3">{t.ranking.subtitle}</p>
           </div>
-          <h2 className="font-display text-6xl md:text-7xl tracking-tight leading-none">
-            {t.about.title}
-          </h2>
-          <div className="mt-6 w-20 h-1 bg-hotpink-500" />
+          <div className="text-xs font-mono uppercase tracking-widest text-[var(--fg-muted)]">
+            {t.ranking.lastReset}: {formatReset(data?.meta.lastReset || null)}
+          </div>
         </div>
 
-        {/* Photo + text grid */}
-        <div className="grid md:grid-cols-12 gap-12 items-center">
-          {/* Photo - circular frame */}
-          <div className="md:col-span-5 flex justify-center md:justify-start">
-            <div className="relative">
-              {/* Outer glow ring */}
-              <div className="absolute -inset-2 rounded-full bg-gradient-to-br from-hotpink-500 via-transparent to-hotpink-500 blur-xl opacity-50" />
-              {/* Frame */}
-              <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-full overflow-hidden border-4 border-hotpink-500 glow-pink">
-                <img
-                  src={imageUrl}
-                  alt="streamer"
-                  className="w-full h-full"
-                  style={{ objectFit: 'cover', objectPosition: position }}
-                />
-              </div>
-              {/* Decorative star */}
-              <div className="absolute -top-2 -right-2 text-hotpink-500 font-display text-4xl select-none">
-                ✦
-              </div>
-              <div className="absolute -bottom-2 -left-2 text-hotpink-500 font-display text-3xl select-none">
-                ✧
-              </div>
-            </div>
+        {loading ? (
+          <div className="text-center py-20 text-[var(--fg-muted)] font-mono uppercase tracking-widest">
+            {t.ranking.loading}
           </div>
-
-          {/* Text */}
-          <div className="md:col-span-7">
-            <p className="text-lg md:text-xl leading-relaxed text-[var(--fg)] font-light mb-10 whitespace-pre-wrap">
-              {text}
-            </p>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)] card-hover">
-                <div className="font-display text-3xl text-hotpink-500">!ponto</div>
-                <div className="text-xs uppercase tracking-widest text-[var(--fg-muted)] mt-2">
-                  {t.about.stats.commands}
-                </div>
-              </div>
-              <div className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)] card-hover">
-                <div className="font-display text-3xl text-hotpink-500">Twitch</div>
-                <div className="text-xs uppercase tracking-widest text-[var(--fg-muted)] mt-2">
-                  {t.about.stats.live}
-                </div>
-              </div>
-              <div className="p-5 rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)] card-hover">
-                <div className="font-display text-3xl text-hotpink-500">✿</div>
-                <div className="text-xs uppercase tracking-widest text-[var(--fg-muted)] mt-2">
-                  {t.about.stats.community}
-                </div>
-              </div>
-            </div>
+        ) : ranking.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">✦</div>
+            <p className="text-xl text-[var(--fg-muted)]">{t.ranking.empty}</p>
           </div>
-        </div>
+        ) : (
+          <>
+            {podium.length > 0 && (
+              <div className="grid sm:grid-cols-3 gap-4 mb-8">
+                {podium.map((entry, idx) => (
+                  <PodiumCard
+                    key={entry.username}
+                    entry={entry}
+                    place={idx + 1}
+                    pointsLabel={
+                      entry.points === 1 ? t.ranking.point : t.ranking.points
+                    }
+                  />
+                ))}
+              </div>
+            )}
+
+            {rest.length > 0 && (
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-secondary)] overflow-hidden">
+                <div className="grid grid-cols-12 px-6 py-3 border-b border-[var(--border)] text-xs font-mono uppercase tracking-widest text-[var(--fg-muted)]">
+                  <div className="col-span-2">#</div>
+                  <div className="col-span-7">{t.ranking.user}</div>
+                  <div className="col-span-3 text-right">{t.ranking.total}</div>
+                </div>
+                {rest.map((entry, idx) => (
+                  <div
+                    key={entry.username}
+                    className="grid grid-cols-12 px-6 py-3 items-center border-b border-[var(--border)] last:border-0 hover:bg-hotpink-500/5 transition-colors"
+                  >
+                    <div className="col-span-2 font-display text-xl text-hotpink-500">
+                      {String(idx + 4).padStart(2, '0')}
+                    </div>
+                    <div className="col-span-7 flex items-center gap-3 min-w-0">
+                      <img
+                        src={entry.avatar}
+                        alt=""
+                        className="w-8 h-8 rounded-full object-cover border border-hotpink-500/40 flex-shrink-0"
+                      />
+                      <span className="font-medium truncate">
+                        {entry.displayName}
+                      </span>
+                    </div>
+                    <div className="col-span-3 text-right font-mono font-bold text-hotpink-500">
+                      {entry.points}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </section>
+  );
+}
+
+function PodiumCard({
+  entry,
+  place,
+  pointsLabel,
+}: {
+  entry: RankingEntry;
+  place: number;
+  pointsLabel: string;
+}) {
+  const sizes = {
+    1: 'sm:order-2 sm:scale-110 sm:-mt-4',
+    2: 'sm:order-1',
+    3: 'sm:order-3',
+  } as const;
+  const medals = { 1: '★', 2: '✦', 3: '✧' } as const;
+
+  return (
+    <div
+      className={`${
+        sizes[place as 1 | 2 | 3]
+      } relative rounded-2xl border-2 border-hotpink-500 bg-[var(--bg-secondary)] p-6 text-center card-hover overflow-hidden`}
+    >
+      {place === 1 && (
+        <div className="absolute inset-0 bg-gradient-to-br from-hotpink-500/20 via-transparent to-hotpink-500/20 pointer-events-none" />
+      )}
+      <div className="relative">
+        <div className="font-display text-7xl text-hotpink-500 leading-none mb-2">
+          {medals[place as 1 | 2 | 3]}
+        </div>
+        <div className="text-xs font-mono uppercase tracking-widest text-[var(--fg-muted)] mb-4">
+          #{place}
+        </div>
+        <img
+          src={entry.avatar}
+          alt=""
+          className="w-20 h-20 rounded-full mx-auto border-2 border-hotpink-500 object-cover mb-3"
+        />
+        <div className="font-display text-2xl truncate">{entry.displayName}</div>
+        <div className="mt-2">
+          <span className="font-mono font-bold text-hotpink-500 text-3xl">
+            {entry.points}
+          </span>
+          <span className="ml-2 text-xs uppercase tracking-widest text-[var(--fg-muted)]">
+            {pointsLabel}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
