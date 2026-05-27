@@ -5,6 +5,8 @@ import { About } from '@/components/About';
 import { Ranking } from '@/components/Ranking';
 import { Live } from '@/components/Live';
 import { Footer } from '@/components/Footer';
+import { AdminPanel } from '@/components/AdminPanel';
+import { ScrollToTop } from '@/components/ScrollToTop';
 
 export const metadata = {
   title: 'coeiha — asrus.app',
@@ -22,6 +24,8 @@ export default function Page() {
         <Live />
       </main>
       <Footer />
+      <ScrollToTop />
+      <AdminPanel />
     </AppProvider>
   );
 }
