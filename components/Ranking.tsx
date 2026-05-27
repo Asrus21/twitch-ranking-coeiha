@@ -28,7 +28,7 @@ export function Ranking() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/ranking', { cache: 'no-store' });
+      const res = await fetch('/api/coeiha/ranking', { cache: 'no-store' });
       if (res.ok) {
         const json = await res.json();
         setData(json);
