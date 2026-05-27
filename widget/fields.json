@@ -1,0 +1,39 @@
+{
+  "duration": {
+    "type": "slider",
+    "label": "Duração na tela (segundos)",
+    "value": 5,
+    "min": 2,
+    "max": 15,
+    "step": 1
+  },
+  "accentColor": {
+    "type": "colorpicker",
+    "label": "Cor de destaque",
+    "value": "#FF1493"
+  },
+  "avatarSize": {
+    "type": "slider",
+    "label": "Tamanho do avatar (px)",
+    "value": 120,
+    "min": 60,
+    "max": 250,
+    "step": 10
+  },
+  "nickSize": {
+    "type": "slider",
+    "label": "Tamanho do nick (px)",
+    "value": 28,
+    "min": 16,
+    "max": 48,
+    "step": 2
+  },
+  "msgSize": {
+    "type": "slider",
+    "label": "Tamanho da mensagem (px)",
+    "value": 20,
+    "min": 14,
+    "max": 36,
+    "step": 2
+  }
+}

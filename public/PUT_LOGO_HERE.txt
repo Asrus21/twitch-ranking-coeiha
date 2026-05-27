@@ -1,0 +1,2 @@
+Drop your circular logo here as `logo.png` (recommended: 256x256 or larger, square).
+The header expects `/logo.png`. If it's missing or fails to load, a pink fallback shows up automatically.

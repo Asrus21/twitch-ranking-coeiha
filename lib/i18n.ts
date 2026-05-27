@@ -1,0 +1,169 @@
+export type Lang = 'pt' | 'en';
+
+type Dict = {
+  nav: { about: string; ranking: string; live: string };
+  hero: {
+    tag: string;
+    title: string;
+    subtitle: string;
+    cta: string;
+    live: string;
+    offline: string;
+  };
+  about: {
+    title: string;
+    placeholder: string;
+    stats: { commands: string; live: string; community: string };
+  };
+  ranking: {
+    title: string;
+    subtitle: string;
+    empty: string;
+    points: string;
+    point: string;
+    position: string;
+    user: string;
+    total: string;
+    loading: string;
+    lastReset: string;
+    never: string;
+    admin: string;
+    reset: string;
+    password: string;
+    confirm: string;
+    resetSuccess: string;
+    resetError: string;
+    cancel: string;
+  };
+  live: {
+    title: string;
+    status: string;
+    online: string;
+    offline: string;
+    watch: string;
+    viewers: string;
+    game: string;
+  };
+  footer: { made: string; by: string };
+};
+
+export const translations: Record<Lang, Dict> = {
+  pt: {
+    nav: {
+      about: 'Sobre',
+      ranking: 'Ranking',
+      live: 'Live',
+    },
+    hero: {
+      tag: 'Ponto Batido',
+      title: 'Bata o ponto na live',
+      subtitle: 'Use !ponto no chat da Twitch e marque presença no ranking diário',
+      cta: 'Ver ranking',
+      live: 'AO VIVO',
+      offline: 'OFFLINE',
+    },
+    about: {
+      title: 'Sobre',
+      placeholder:
+        'Texto sobre a streamer aparece aqui. Em breve um texto incrível contando a história, o que ela joga, os horários da live e tudo o que faz o canal ser único.',
+      stats: {
+        commands: 'Comando',
+        live: 'Plataforma',
+        community: 'Comunidade',
+      },
+    },
+    ranking: {
+      title: 'Ranking',
+      subtitle: 'Quem mais bateu o ponto',
+      empty: 'Ninguém bateu o ponto ainda. Seja o primeiro!',
+      points: 'pontos',
+      point: 'ponto',
+      position: 'Posição',
+      user: 'Usuário',
+      total: 'Total',
+      loading: 'Carregando...',
+      lastReset: 'Último reset',
+      never: 'Nunca',
+      admin: 'Admin',
+      reset: 'Resetar ranking',
+      password: 'Senha admin',
+      confirm: 'Tem certeza? Isso apaga todo o ranking.',
+      resetSuccess: 'Ranking resetado',
+      resetError: 'Erro ao resetar',
+      cancel: 'Cancelar',
+    },
+    live: {
+      title: 'Acompanhe a live',
+      status: 'Status',
+      online: 'Online agora',
+      offline: 'Offline',
+      watch: 'Assistir na Twitch',
+      viewers: 'espectadores',
+      game: 'Jogo',
+    },
+    footer: {
+      made: 'Feito com',
+      by: 'por',
+    },
+  },
+  en: {
+    nav: {
+      about: 'About',
+      ranking: 'Ranking',
+      live: 'Live',
+    },
+    hero: {
+      tag: 'Clock In',
+      title: 'Clock in on the stream',
+      subtitle: 'Type !ponto in Twitch chat and check in to the daily ranking',
+      cta: 'See ranking',
+      live: 'LIVE',
+      offline: 'OFFLINE',
+    },
+    about: {
+      title: 'About',
+      placeholder:
+        'Streamer bio appears here. Coming soon — an amazing text about the channel, the games, the schedule, and everything that makes this community special.',
+      stats: {
+        commands: 'Command',
+        live: 'Platform',
+        community: 'Community',
+      },
+    },
+    ranking: {
+      title: 'Ranking',
+      subtitle: 'Who clocked in the most',
+      empty: 'No one has clocked in yet. Be the first!',
+      points: 'points',
+      point: 'point',
+      position: 'Position',
+      user: 'User',
+      total: 'Total',
+      loading: 'Loading...',
+      lastReset: 'Last reset',
+      never: 'Never',
+      admin: 'Admin',
+      reset: 'Reset ranking',
+      password: 'Admin password',
+      confirm: 'Are you sure? This wipes the whole ranking.',
+      resetSuccess: 'Ranking reset',
+      resetError: 'Reset failed',
+      cancel: 'Cancel',
+    },
+    live: {
+      title: 'Watch the stream',
+      status: 'Status',
+      online: 'Online now',
+      offline: 'Offline',
+      watch: 'Watch on Twitch',
+      viewers: 'viewers',
+      game: 'Game',
+    },
+    footer: {
+      made: 'Made with',
+      by: 'by',
+    },
+  },
+};
+
+export type Translations = Dict;

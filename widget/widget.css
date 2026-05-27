@@ -1,0 +1,62 @@
+/* ===== StreamElements Widget CSS (paste in CSS panel) ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: transparent;
+  font-family: 'Roboto', sans-serif;
+  overflow: hidden;
+}
+
+#ponto-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#ponto-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 32px;
+  background: rgba(20, 20, 30, 0.85);
+  border-radius: 16px;
+  border: 2px solid var(--accent-color, #FF1493);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transform: scale(0.7) translateY(20px);
+  transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+#ponto-card.show {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+#ponto-card.hidden {
+  display: none;
+}
+
+#ponto-avatar {
+  width: var(--avatar-size, 120px);
+  height: var(--avatar-size, 120px);
+  border-radius: 50%;
+  border: 3px solid var(--accent-color, #FF1493);
+  object-fit: cover;
+}
+
+#ponto-nick {
+  font-size: var(--nick-size, 28px);
+  font-weight: 700;
+  color: var(--accent-color, #FF1493);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+#ponto-msg {
+  font-size: var(--msg-size, 20px);
+  font-weight: 500;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
