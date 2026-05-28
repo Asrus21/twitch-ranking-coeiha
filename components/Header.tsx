@@ -29,7 +29,7 @@ export function Header() {
             </div>
           </div>
           <span className="font-display text-2xl tracking-wider text-[var(--fg)]">
-            asrus<span className="text-hotpink-500">.</span>app
+            Co<span className="text-hotpink-500">el</span>ha
           </span>
         </a>
 
