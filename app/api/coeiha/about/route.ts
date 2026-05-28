@@ -36,11 +36,13 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { textPt, textEn, imageUrl, imagePosition } = body as {
+    const { textPt, textEn, imageUrl, imagePosition, logoUrl, links } = body as {
       textPt?: string;
       textEn?: string;
       imageUrl?: string;
       imagePosition?: string;
+      logoUrl?: string;
+      links?: string;
     };
 
     // Validate image size if it's a data URL
@@ -53,12 +55,23 @@ export async function PUT(req: NextRequest) {
         );
       }
     }
+    if (logoUrl && logoUrl.startsWith('data:')) {
+      const bytes = Math.floor((logoUrl.length * 3) / 4);
+      if (bytes > MAX_IMAGE_BYTES) {
+        return NextResponse.json(
+          { error: 'logo too large (max ~2MB)' },
+          { status: 413 }
+        );
+      }
+    }
 
     await updateAboutSettings({
       textPt,
       textEn,
       imageUrl,
       imagePosition,
+      logoUrl,
+      links,
     });
 
     return NextResponse.json({ ok: true });
