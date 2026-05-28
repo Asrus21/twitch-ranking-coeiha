@@ -143,13 +143,15 @@ export type AboutSettings = {
   textEn: string | null;
   imageUrl: string | null;
   imagePosition: string | null; // CSS object-position value like "50% 30%"
+  logoUrl: string | null;
+  links: string | null; // JSON string of the cards config
 };
 
 export async function getAboutSettings(): Promise<AboutSettings> {
   await ensureSchema();
   const rows = (await getSql()`
     SELECT key, value FROM settings
-    WHERE key IN ('about_text_pt', 'about_text_en', 'about_image_url', 'about_image_position')
+    WHERE key IN ('about_text_pt', 'about_text_en', 'about_image_url', 'about_image_position', 'logo_url', 'about_links')
   `) as Array<{ key: string; value: string }>;
 
   const map = new Map(rows.map((r) => [r.key, r.value]));
@@ -158,6 +160,8 @@ export async function getAboutSettings(): Promise<AboutSettings> {
     textEn: map.get('about_text_en') ?? null,
     imageUrl: map.get('about_image_url') ?? null,
     imagePosition: map.get('about_image_position') ?? null,
+    logoUrl: map.get('logo_url') ?? null,
+    links: map.get('about_links') ?? null,
   };
 }
 
@@ -174,6 +178,10 @@ export async function updateAboutSettings(
     entries.push(['about_image_url', patch.imageUrl]);
   if (patch.imagePosition !== undefined && patch.imagePosition !== null)
     entries.push(['about_image_position', patch.imagePosition]);
+  if (patch.logoUrl !== undefined && patch.logoUrl !== null)
+    entries.push(['logo_url', patch.logoUrl]);
+  if (patch.links !== undefined && patch.links !== null)
+    entries.push(['about_links', patch.links]);
 
   for (const [key, value] of entries) {
     await getSql()`
