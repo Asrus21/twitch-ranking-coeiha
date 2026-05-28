@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useApp } from './AppProvider';
+import { parseCards, type AboutCard } from '@/lib/cards';
 
 const MAX_IMAGE_BYTES = 2_000_000;
 
@@ -23,29 +24,32 @@ export function AdminPanel() {
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
-  // Edit form state — populated when admin opens the panel
+  // Edit form state
   const [textPt, setTextPt] = useState('');
   const [textEn, setTextEn] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [imagePosX, setImagePosX] = useState(50);
   const [imagePosY, setImagePosY] = useState(35);
+  const [logoUrl, setLogoUrl] = useState('');
+  const [cards, setCards] = useState<AboutCard[]>([]);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
-  // Open via header button
   useEffect(() => {
     const handler = () => setOpen(true);
     window.addEventListener('coeiha:open-admin', handler);
     return () => window.removeEventListener('coeiha:open-admin', handler);
   }, []);
 
-  // When opening as admin (already logged in), seed the form with current data
   useEffect(() => {
     if (!open || !isAdmin) return;
     setTextPt(about.textPt ?? '');
     setTextEn(about.textEn ?? '');
     setImageUrl(about.imageUrl ?? '');
+    setLogoUrl(about.logoUrl ?? '');
+    setCards(parseCards(about.links ?? null));
     const pos = about.imagePosition ?? '50% 35%';
     const [x, y] = pos.replace(/%/g, '').split(' ').map((n) => parseInt(n, 10));
     if (!isNaN(x)) setImagePosX(x);
@@ -73,8 +77,12 @@ export function AdminPanel() {
     else setPassword('');
   };
 
-  // Compress + read file as base64 data URL
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Generic image-select handler. `which` decides which state to update,
+  // and the max width differs (logo is small, photo is bigger).
+  const handleImageSelect = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    which: 'photo' | 'logo'
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setError(null);
@@ -84,19 +92,46 @@ export function AdminPanel() {
     reader.onload = async () => {
       const dataUrl = reader.result as string;
       try {
-        const compressed = await compressImage(dataUrl, 800, 0.85);
+        const maxW = which === 'logo' ? 256 : 800;
+        const compressed = await compressImage(dataUrl, maxW, 0.85);
         const bytes = Math.floor((compressed.length * 3) / 4);
         if (bytes > MAX_IMAGE_BYTES) {
           setError(t.admin.imageTooLarge);
           return;
         }
-        setImageUrl(compressed);
+        if (which === 'logo') setLogoUrl(compressed);
+        else setImageUrl(compressed);
       } catch (err) {
         console.error('[compress]', err);
         setError(t.admin.imageError);
       }
     };
     reader.readAsDataURL(file);
+  };
+
+  // Card editing helpers
+  const updateCard = (index: number, patch: Partial<AboutCard>) => {
+    setCards((prev) =>
+      prev.map((c, i) => (i === index ? { ...c, ...patch } : c))
+    );
+  };
+  const addCard = () => {
+    setCards((prev) => [
+      ...prev,
+      { label: 'novo', captionPt: 'Link', captionEn: 'Link', url: 'https://' },
+    ]);
+  };
+  const removeCard = (index: number) => {
+    setCards((prev) => prev.filter((_, i) => i !== index));
+  };
+  const moveCard = (index: number, dir: -1 | 1) => {
+    setCards((prev) => {
+      const next = [...prev];
+      const target = index + dir;
+      if (target < 0 || target >= next.length) return prev;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
   };
 
   const handleSave = async () => {
@@ -116,6 +151,8 @@ export function AdminPanel() {
           textEn: textEn || null,
           imageUrl: imageUrl || null,
           imagePosition: `${imagePosX}% ${imagePosY}%`,
+          logoUrl: logoUrl || null,
+          links: JSON.stringify(cards),
         }),
       });
       if (res.ok) {
@@ -170,8 +207,7 @@ export function AdminPanel() {
         className="bg-[var(--bg-secondary)] rounded-2xl border border-hotpink-500 max-w-2xl w-full glow-pink max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="sticky top-0 bg-[var(--bg-secondary)] border-b border-[var(--border)] p-6 flex items-center justify-between">
+        <div className="sticky top-0 bg-[var(--bg-secondary)] border-b border-[var(--border)] p-6 flex items-center justify-between z-10">
           <h3 className="font-display text-3xl">{t.admin.title}</h3>
           <button
             onClick={close}
@@ -187,7 +223,6 @@ export function AdminPanel() {
 
         <div className="p-6">
           {!isAdmin ? (
-            // ===== LOGIN =====
             <div>
               <p className="text-sm text-[var(--fg-muted)] mb-6">
                 {t.admin.loginHint}
@@ -221,15 +256,42 @@ export function AdminPanel() {
               </div>
             </div>
           ) : (
-            // ===== AUTHENTICATED PANEL =====
             <div className="space-y-8">
-              {/* IMAGE SECTION */}
+              {/* LOGO SECTION */}
+              <section>
+                <h4 className="font-display text-2xl mb-4 flex items-center gap-2">
+                  <span className="text-hotpink-500">✦</span> {t.admin.logoTitle}
+                </h4>
+                <div className="flex items-center gap-6">
+                  <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-hotpink-500 glow-pink bg-[var(--bg)] flex-shrink-0">
+                    {logoUrl ? (
+                      <img src={logoUrl} alt="logo" className="w-full h-full object-cover" />
+                    ) : (
+                      <img src="/logo.png" alt="logo" className="w-full h-full object-cover" />
+                    )}
+                  </div>
+                  <input
+                    ref={logoInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageSelect(e, 'logo')}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => logoInputRef.current?.click()}
+                    className="px-4 py-2.5 rounded-full border border-hotpink-500 text-hotpink-500 font-bold uppercase text-xs tracking-widest hover:bg-hotpink-500 hover:text-white transition-all"
+                  >
+                    {t.admin.uploadLogo}
+                  </button>
+                </div>
+              </section>
+
+              {/* PHOTO SECTION */}
               <section>
                 <h4 className="font-display text-2xl mb-4 flex items-center gap-2">
                   <span className="text-hotpink-500">✦</span> {t.admin.photoTitle}
                 </h4>
                 <div className="flex flex-col sm:flex-row gap-6 items-start">
-                  {/* Preview */}
                   <div className="relative flex-shrink-0">
                     <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-hotpink-500 glow-pink bg-[var(--bg)]">
                       {imageUrl ? (
@@ -243,19 +305,24 @@ export function AdminPanel() {
                           }}
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[var(--fg-muted)] font-mono text-xs">
-                          {t.admin.noImage}
-                        </div>
+                        <img
+                          src="/about.jpg"
+                          alt="preview"
+                          className="w-full h-full"
+                          style={{
+                            objectFit: 'cover',
+                            objectPosition: `${imagePosX}% ${imagePosY}%`,
+                          }}
+                        />
                       )}
                     </div>
                   </div>
-                  {/* Controls */}
                   <div className="flex-1 w-full space-y-4">
                     <input
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
-                      onChange={handleFileSelect}
+                      onChange={(e) => handleImageSelect(e, 'photo')}
                       className="hidden"
                     />
                     <button
@@ -264,32 +331,21 @@ export function AdminPanel() {
                     >
                       {t.admin.uploadPhoto}
                     </button>
-
                     <div>
                       <label className="block text-xs font-mono uppercase tracking-widest text-[var(--fg-muted)] mb-2">
                         {t.admin.posX}: {imagePosX}%
                       </label>
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={imagePosX}
+                      <input type="range" min={0} max={100} value={imagePosX}
                         onChange={(e) => setImagePosX(parseInt(e.target.value, 10))}
-                        className="w-full accent-hotpink-500"
-                      />
+                        className="w-full accent-hotpink-500" />
                     </div>
                     <div>
                       <label className="block text-xs font-mono uppercase tracking-widest text-[var(--fg-muted)] mb-2">
                         {t.admin.posY}: {imagePosY}%
                       </label>
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={imagePosY}
+                      <input type="range" min={0} max={100} value={imagePosY}
                         onChange={(e) => setImagePosY(parseInt(e.target.value, 10))}
-                        className="w-full accent-hotpink-500"
-                      />
+                        className="w-full accent-hotpink-500" />
                     </div>
                   </div>
                 </div>
@@ -305,58 +361,102 @@ export function AdminPanel() {
                     <label className="block text-xs font-mono uppercase tracking-widest text-[var(--fg-muted)] mb-2">
                       {t.admin.textPt}
                     </label>
-                    <textarea
-                      value={textPt}
-                      onChange={(e) => setTextPt(e.target.value)}
-                      rows={4}
+                    <textarea value={textPt} onChange={(e) => setTextPt(e.target.value)} rows={4}
                       className="w-full px-4 py-3 rounded-lg bg-[var(--bg)] border border-[var(--border)] focus:border-hotpink-500 focus:outline-none resize-y"
-                      placeholder={t.admin.textPlaceholder}
-                    />
+                      placeholder={t.admin.textPlaceholder} />
                   </div>
                   <div>
                     <label className="block text-xs font-mono uppercase tracking-widest text-[var(--fg-muted)] mb-2">
                       {t.admin.textEn}
                     </label>
-                    <textarea
-                      value={textEn}
-                      onChange={(e) => setTextEn(e.target.value)}
-                      rows={4}
+                    <textarea value={textEn} onChange={(e) => setTextEn(e.target.value)} rows={4}
                       className="w-full px-4 py-3 rounded-lg bg-[var(--bg)] border border-[var(--border)] focus:border-hotpink-500 focus:outline-none resize-y"
-                      placeholder={t.admin.textPlaceholder}
-                    />
+                      placeholder={t.admin.textPlaceholder} />
                   </div>
                 </div>
               </section>
 
-              {/* RESET SECTION - reveals only after confirmation */}
+              {/* CARDS / LINKS SECTION */}
+              <section>
+                <h4 className="font-display text-2xl mb-4 flex items-center gap-2">
+                  <span className="text-hotpink-500">✦</span> {t.admin.linksTitle}
+                </h4>
+                <div className="space-y-4">
+                  {cards.map((card, i) => (
+                    <div key={i} className="p-4 rounded-xl border border-[var(--border)] bg-[var(--bg)] space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs uppercase tracking-widest text-[var(--fg-muted)]">
+                          #{i + 1}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => moveCard(i, -1)} disabled={i === 0}
+                            className="w-7 h-7 rounded-full border border-[var(--border)] flex items-center justify-center disabled:opacity-30 hover:bg-hotpink-500 hover:text-white transition-all"
+                            aria-label="move up">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="18 15 12 9 6 15" /></svg>
+                          </button>
+                          <button onClick={() => moveCard(i, 1)} disabled={i === cards.length - 1}
+                            className="w-7 h-7 rounded-full border border-[var(--border)] flex items-center justify-center disabled:opacity-30 hover:bg-hotpink-500 hover:text-white transition-all"
+                            aria-label="move down">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9" /></svg>
+                          </button>
+                          <button onClick={() => removeCard(i)}
+                            className="w-7 h-7 rounded-full border border-red-500 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"
+                            aria-label="remove">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-mono uppercase tracking-widest text-[var(--fg-muted)] mb-1">{t.admin.cardLabel}</label>
+                          <input value={card.label} onChange={(e) => updateCard(i, { label: e.target.value })}
+                            className="w-full px-3 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] focus:border-hotpink-500 focus:outline-none text-sm" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-mono uppercase tracking-widest text-[var(--fg-muted)] mb-1">{t.admin.cardCaptionPt}</label>
+                          <input value={card.captionPt} onChange={(e) => updateCard(i, { captionPt: e.target.value })}
+                            className="w-full px-3 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] focus:border-hotpink-500 focus:outline-none text-sm" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-mono uppercase tracking-widest text-[var(--fg-muted)] mb-1">{t.admin.cardCaptionEn}</label>
+                          <input value={card.captionEn} onChange={(e) => updateCard(i, { captionEn: e.target.value })}
+                            className="w-full px-3 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] focus:border-hotpink-500 focus:outline-none text-sm" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-mono uppercase tracking-widest text-[var(--fg-muted)] mb-1">{t.admin.cardUrl}</label>
+                          <input value={card.url} onChange={(e) => updateCard(i, { url: e.target.value })}
+                            className="w-full px-3 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] focus:border-hotpink-500 focus:outline-none text-sm font-mono" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <button onClick={addCard}
+                    className="w-full px-4 py-2.5 rounded-full border border-dashed border-hotpink-500 text-hotpink-500 font-bold uppercase text-xs tracking-widest hover:bg-hotpink-500 hover:text-white transition-all">
+                    + {t.admin.addCard}
+                  </button>
+                </div>
+              </section>
+
+              {/* DANGER ZONE */}
               <section className="pt-6 border-t border-[var(--border)]">
                 <h4 className="font-display text-2xl mb-4 flex items-center gap-2 text-red-500">
                   <span>⚠</span> {t.admin.dangerZone}
                 </h4>
                 {!showResetConfirm ? (
-                  <button
-                    onClick={() => setShowResetConfirm(true)}
-                    className="px-4 py-2.5 rounded-full border border-red-500 text-red-500 font-bold uppercase text-xs tracking-widest hover:bg-red-500 hover:text-white transition-all"
-                  >
+                  <button onClick={() => setShowResetConfirm(true)}
+                    className="px-4 py-2.5 rounded-full border border-red-500 text-red-500 font-bold uppercase text-xs tracking-widest hover:bg-red-500 hover:text-white transition-all">
                     {t.admin.showReset}
                   </button>
                 ) : (
                   <div className="space-y-3">
-                    <p className="text-sm text-[var(--fg-muted)]">
-                      {t.ranking.confirm}
-                    </p>
+                    <p className="text-sm text-[var(--fg-muted)]">{t.ranking.confirm}</p>
                     <div className="flex gap-3">
-                      <button
-                        onClick={() => setShowResetConfirm(false)}
-                        className="px-4 py-2.5 rounded-full border border-[var(--border)] font-bold uppercase text-xs tracking-widest hover:bg-[var(--bg)]"
-                      >
+                      <button onClick={() => setShowResetConfirm(false)}
+                        className="px-4 py-2.5 rounded-full border border-[var(--border)] font-bold uppercase text-xs tracking-widest hover:bg-[var(--bg)]">
                         {t.ranking.cancel}
                       </button>
-                      <button
-                        onClick={handleReset}
-                        disabled={busy}
-                        className="px-4 py-2.5 rounded-full bg-red-500 text-white font-bold uppercase text-xs tracking-widest hover:bg-red-600 disabled:opacity-50"
-                      >
+                      <button onClick={handleReset} disabled={busy}
+                        className="px-4 py-2.5 rounded-full bg-red-500 text-white font-bold uppercase text-xs tracking-widest hover:bg-red-600 disabled:opacity-50">
                         {busy ? '...' : 'Reset'}
                       </button>
                     </div>
@@ -364,30 +464,16 @@ export function AdminPanel() {
                 )}
               </section>
 
-              {/* Status messages */}
-              {error && (
-                <div className="text-sm font-mono text-red-500">{error}</div>
-              )}
-              {msg && (
-                <div className="text-sm font-mono text-green-500">{msg}</div>
-              )}
+              {error && <div className="text-sm font-mono text-red-500">{error}</div>}
+              {msg && <div className="text-sm font-mono text-green-500">{msg}</div>}
 
-              {/* Action footer */}
               <div className="sticky bottom-0 bg-[var(--bg-secondary)] pt-4 pb-2 -mx-6 px-6 border-t border-[var(--border)] flex gap-3">
-                <button
-                  onClick={() => {
-                    adminLogout();
-                    close();
-                  }}
-                  className="px-4 py-3 rounded-full border border-[var(--border)] font-bold uppercase text-xs tracking-widest hover:bg-[var(--bg)]"
-                >
+                <button onClick={() => { adminLogout(); close(); }}
+                  className="px-4 py-3 rounded-full border border-[var(--border)] font-bold uppercase text-xs tracking-widest hover:bg-[var(--bg)]">
                   {t.admin.logout}
                 </button>
-                <button
-                  onClick={handleSave}
-                  disabled={busy}
-                  className="flex-1 px-4 py-3 rounded-full bg-hotpink-500 text-white font-bold uppercase text-xs tracking-widest hover:bg-hotpink-600 disabled:opacity-50"
-                >
+                <button onClick={handleSave} disabled={busy}
+                  className="flex-1 px-4 py-3 rounded-full bg-hotpink-500 text-white font-bold uppercase text-xs tracking-widest hover:bg-hotpink-600 disabled:opacity-50">
                   {busy ? '...' : t.admin.save}
                 </button>
               </div>
@@ -399,10 +485,6 @@ export function AdminPanel() {
   );
 }
 
-/**
- * Compress an image data URL to a max width, returning a JPEG data URL.
- * This keeps the payload under the 2MB limit even for high-res phone photos.
- */
 async function compressImage(
   dataUrl: string,
   maxWidth: number,
