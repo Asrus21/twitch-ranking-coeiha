@@ -3,11 +3,13 @@
 import { useApp } from './AppProvider';
 
 export function Header() {
-  const { theme, toggleTheme, lang, toggleLang, t, isAdmin } = useApp();
+  const { theme, toggleTheme, lang, toggleLang, t, isAdmin, about } = useApp();
 
   const openAdmin = () => {
     window.dispatchEvent(new CustomEvent('coeiha:open-admin'));
   };
+
+  const logoSrc = about.logoUrl || '/logo.png';
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-md bg-[var(--bg)]/70 border-b border-[var(--border)]">
@@ -15,7 +17,7 @@ export function Header() {
         <a href="#top" className="flex items-center gap-3 group">
           <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-hotpink-500 glow-pink group-hover:animate-glow">
             <img
-              src="/logo.png"
+              src={logoSrc}
               alt="logo"
               className="w-full h-full object-cover"
               onError={(e) => {
