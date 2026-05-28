@@ -16,6 +16,8 @@ export type AboutData = {
   textEn: string | null;
   imageUrl: string | null;
   imagePosition: string | null;
+  logoUrl: string | null;
+  links: string | null;
 };
 
 type Ctx = {
@@ -43,6 +45,8 @@ const DEFAULT_ABOUT: AboutData = {
   textEn: null,
   imageUrl: null,
   imagePosition: null,
+  logoUrl: null,
+  links: null,
 };
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
