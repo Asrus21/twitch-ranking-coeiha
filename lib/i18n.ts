@@ -64,6 +64,14 @@ type Dict = {
     textPt: string;
     textEn: string;
     textPlaceholder: string;
+    logoTitle: string;
+    uploadLogo: string;
+    linksTitle: string;
+    addCard: string;
+    cardLabel: string;
+    cardCaptionPt: string;
+    cardCaptionEn: string;
+    cardUrl: string;
     dangerZone: string;
     showReset: string;
     resetSuccess: string;
@@ -146,6 +154,14 @@ export const translations: Record<Lang, Dict> = {
       textPt: 'Texto em Português',
       textEn: 'Texto em Inglês',
       textPlaceholder: 'Escreva o texto do Sobre aqui...',
+      logoTitle: 'Logo do site',
+      uploadLogo: 'Enviar nova logo',
+      linksTitle: 'Cards de links',
+      addCard: 'Adicionar card',
+      cardLabel: 'Texto principal',
+      cardCaptionPt: 'Legenda (PT)',
+      cardCaptionEn: 'Legenda (EN)',
+      cardUrl: 'Link (URL)',
       dangerZone: 'Zona perigosa',
       showReset: 'Mostrar opções de reset',
       resetSuccess: 'Ranking resetado',
@@ -229,6 +245,14 @@ export const translations: Record<Lang, Dict> = {
       textPt: 'Portuguese text',
       textEn: 'English text',
       textPlaceholder: 'Write the About text here...',
+      logoTitle: 'Site logo',
+      uploadLogo: 'Upload new logo',
+      linksTitle: 'Link cards',
+      addCard: 'Add card',
+      cardLabel: 'Main text',
+      cardCaptionPt: 'Caption (PT)',
+      cardCaptionEn: 'Caption (EN)',
+      cardUrl: 'Link (URL)',
       dangerZone: 'Danger zone',
       showReset: 'Show reset options',
       resetSuccess: 'Ranking reset',
