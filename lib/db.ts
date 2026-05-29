@@ -192,28 +192,42 @@ export async function updateAboutSettings(
   }
 }
 
+const DEFAULT_AVATAR =
+  'https://static-cdn.jtvnw.net/jtv_user_pictures/xarth/404_user_300x300.png';
+
 export async function addPointsManually(params: {
   username: string;
   points: number;
+  avatar?: string | null;
 }): Promise<{ username: string; total: number }> {
   await ensureSchema();
   const username = params.username.toLowerCase().trim();
   const pts = Math.max(1, Math.floor(params.points));
+  const avatar = params.avatar || DEFAULT_AVATAR;
 
+  // When a real avatar was resolved, refresh it on conflict as well — this
+  // also fixes older rows that were created with the placeholder.
   const rows = (await getSql()`
     INSERT INTO pontos (username, display_name, avatar, points, updated_at)
-    VALUES (
-      ${username},
-      ${params.username.trim()},
-      'https://static-cdn.jtvnw.net/jtv_user_pictures/xarth/404_user_300x300.png',
-      ${pts},
-      NOW()
-    )
+    VALUES (${username}, ${params.username.trim()}, ${avatar}, ${pts}, NOW())
     ON CONFLICT (username) DO UPDATE
       SET points = pontos.points + ${pts},
+          avatar = CASE
+            WHEN ${avatar} <> ${DEFAULT_AVATAR} THEN ${avatar}
+            ELSE pontos.avatar
+          END,
           updated_at = NOW()
     RETURNING username, points
   `) as { username: string; points: number }[];
 
   return { username: rows[0].username, total: rows[0].points };
+}
+
+export async function removeUser(username: string): Promise<boolean> {
+  await ensureSchema();
+  const uname = username.toLowerCase().trim();
+  const rows = (await getSql()`
+    DELETE FROM pontos WHERE username = ${uname} RETURNING username
+  `) as { username: string }[];
+  return rows.length > 0;
 }

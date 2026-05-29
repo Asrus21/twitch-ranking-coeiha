@@ -39,6 +39,10 @@ export function AdminPanel() {
   const [addPts, setAddPts] = useState(1);
   const [addBusy, setAddBusy] = useState(false);
 
+  // Remove nick
+  const [removeName, setRemoveName] = useState('');
+  const [removeBusy, setRemoveBusy] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -505,6 +509,61 @@ export function AdminPanel() {
                     className="w-full px-4 py-3 rounded-full bg-hotpink-500 text-white font-bold uppercase text-xs tracking-widest hover:bg-hotpink-600 disabled:opacity-50 transition-all"
                   >
                     {addBusy ? '...' : t.admin.addPointsBtn}
+                  </button>
+                </div>
+              </section>
+
+              {/* REMOVE NICK */}
+              <section className="pt-6 border-t border-[var(--border)]">
+                <h4 className="font-display text-2xl mb-4 flex items-center gap-2">
+                  <span className="text-hotpink-500">✦</span> {t.admin.removeTitle}
+                </h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-mono uppercase tracking-widest text-[var(--fg-muted)] mb-2">
+                      {t.admin.removeUser}
+                    </label>
+                    <input
+                      type="text"
+                      value={removeName}
+                      onChange={(e) => setRemoveName(e.target.value)}
+                      placeholder="ex: asrus12"
+                      className="w-full px-4 py-3 rounded-lg bg-[var(--bg)] border border-[var(--border)] focus:border-hotpink-500 focus:outline-none font-mono"
+                    />
+                  </div>
+                  <button
+                    disabled={removeBusy || !removeName.trim()}
+                    onClick={async () => {
+                      if (!adminPassword || !removeName.trim()) return;
+                      setRemoveBusy(true);
+                      setError(null);
+                      setMsg(null);
+                      try {
+                        const res = await fetch('/api/coeiha/admin-remove', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ password: adminPassword, username: removeName.trim() }),
+                        });
+                        if (res.ok) {
+                          setMsg(`${t.admin.removeSuccess}: ${removeName.trim()}`);
+                          setRemoveName('');
+                          window.dispatchEvent(new CustomEvent('coeiha:refresh-ranking'));
+                          setTimeout(() => setMsg(null), 3000);
+                        } else if (res.status === 404) {
+                          setError(t.admin.removeNotFound);
+                        } else {
+                          const data = await res.json().catch(() => ({}));
+                          setError(data.error || t.admin.removeError);
+                        }
+                      } catch {
+                        setError(t.admin.removeError);
+                      } finally {
+                        setRemoveBusy(false);
+                      }
+                    }}
+                    className="w-full px-4 py-3 rounded-full border border-red-500 text-red-500 font-bold uppercase text-xs tracking-widest hover:bg-red-500 hover:text-white disabled:opacity-50 transition-all"
+                  >
+                    {removeBusy ? '...' : t.admin.removeBtn}
                   </button>
                 </div>
               </section>
