@@ -648,11 +648,15 @@ export function AdminPanel() {
                           <p className="text-xs font-mono uppercase tracking-widest text-[var(--fg-muted)] mb-2">
                             {lang === 'pt' ? col.labelPt : col.labelEn}
                           </p>
-                          <div className="grid grid-cols-4 gap-2">
+                          <div className="grid grid-cols-3 gap-3">
                             {colGames.map((game) => (
-                              <div key={game.id} className="relative rounded-lg overflow-hidden border border-[var(--border)] aspect-[3/4] flex flex-col">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={game.imageUrl} alt={game.title} className="flex-1 w-full object-cover" loading="lazy" />
+                              <div key={game.id} className="rounded-lg overflow-hidden border border-[var(--border)] bg-[var(--bg)]">
+                                {/* Cover — fixed aspect ratio */}
+                                <div className="relative aspect-[3/4] overflow-hidden">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={game.imageUrl} alt={game.title} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+                                </div>
+                                {/* Remove button — always outside and below the image */}
                                 <button
                                   disabled={removingId === game.id}
                                   onClick={async () => {
@@ -677,7 +681,7 @@ export function AdminPanel() {
                                       setRemovingId(null);
                                     }
                                   }}
-                                  className="w-full py-1 bg-red-500/90 text-white text-[9px] font-bold uppercase tracking-widest hover:bg-red-600 disabled:opacity-60 transition-all flex-shrink-0"
+                                  className="w-full py-2 bg-red-500 text-white text-[11px] font-bold uppercase tracking-widest hover:bg-red-600 disabled:opacity-60 transition-all"
                                   title={game.title}
                                 >
                                   {removingId === game.id ? '...' : (lang === 'pt' ? 'Remover' : 'Remove')}
