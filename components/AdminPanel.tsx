@@ -65,6 +65,8 @@ export function AdminPanel() {
   const [manualImageUrl, setManualImageUrl] = useState('');
   const [gameCollection, setGameCollection] = useState<GameCollection>('playing');
   const [gameBusy, setGameBusy] = useState(false);
+  const [removingId, setRemovingId] = useState<number | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -652,21 +654,33 @@ export function AdminPanel() {
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={game.imageUrl} alt={game.title} className="flex-1 w-full object-cover" loading="lazy" />
                                 <button
+                                  disabled={removingId === game.id}
                                   onClick={async () => {
                                     if (!adminPassword) return;
-                                    const res = await fetch('/api/coeiha/admin-games', {
-                                      method: 'DELETE',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ password: adminPassword, id: game.id }),
-                                    });
-                                    if (res.ok) {
-                                      removeGameFromList(game.id); // instant UI update
+                                    setRemovingId(game.id);
+                                    setRemoveError(null);
+                                    try {
+                                      const res = await fetch('/api/coeiha/admin-games', {
+                                        method: 'DELETE',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ password: adminPassword, id: Number(game.id) }),
+                                      });
+                                      if (res.ok) {
+                                        removeGameFromList(game.id);
+                                      } else {
+                                        const data = await res.json().catch(() => ({}));
+                                        setRemoveError(`Erro ${res.status}: ${data.error ?? 'falhou'}`);
+                                      }
+                                    } catch (e) {
+                                      setRemoveError('Erro de rede');
+                                    } finally {
+                                      setRemovingId(null);
                                     }
                                   }}
-                                  className="w-full py-1 bg-red-500/90 text-white text-[9px] font-bold uppercase tracking-widest hover:bg-red-600 transition-all flex-shrink-0"
+                                  className="w-full py-1 bg-red-500/90 text-white text-[9px] font-bold uppercase tracking-widest hover:bg-red-600 disabled:opacity-60 transition-all flex-shrink-0"
                                   title={game.title}
                                 >
-                                    {lang === 'pt' ? 'Remover' : 'Remove'}
+                                  {removingId === game.id ? '...' : (lang === 'pt' ? 'Remover' : 'Remove')}
                                 </button>
                               </div>
                             ))}
@@ -675,6 +689,9 @@ export function AdminPanel() {
                       );
                     })}
                   </div>
+                )}
+                {removeError && (
+                  <p className="mt-3 text-xs font-mono text-red-400">{removeError}</p>
                 )}
               </section>
 
