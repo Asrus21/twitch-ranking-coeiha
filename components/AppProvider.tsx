@@ -103,7 +103,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const refreshGames = useCallback(async () => {
     try {
-      const res = await fetch('/api/coeiha/games', { cache: 'no-store' });
+      // timestamp param busts any Vercel Edge CDN cache
+      const res = await fetch(`/api/coeiha/games?t=${Date.now()}`, { cache: 'no-store' });
       if (res.ok) {
         const data = (await res.json()) as GameEntry[];
         setGames(data);

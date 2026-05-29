@@ -669,7 +669,8 @@ export function AdminPanel() {
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ password: adminPassword, id: Number(game.id) }),
                                       });
-                                      if (res.ok) {
+                                      if (res.ok || res.status === 404) {
+                                        // 404 = not in DB (stale state) — remove from list anyway
                                         removeGameFromList(game.id);
                                       } else {
                                         const data = await res.json().catch(() => ({}));
