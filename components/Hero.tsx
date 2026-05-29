@@ -199,7 +199,7 @@ export function Hero() {
                 </svg>
               </a>
               <a
-                href="#sobre"
+                href="#about"
                 className="inline-flex items-center gap-2 px-6 py-4 rounded-full border border-[var(--border)] text-[var(--fg-muted)] text-sm font-bold uppercase tracking-widest hover:border-hotpink-500/60 hover:text-hotpink-500 transition-all"
               >
                 Saiba mais
