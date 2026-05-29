@@ -26,16 +26,19 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const { password, id } = await req.json();
+    const body = await req.json();
+    const { password } = body;
+    const id = Number(body.id); // coerce string or number to number
     const expected = process.env.ADMIN_PASSWORD;
+
+    console.log('[admin-games DELETE] id=', id, 'type=', typeof body.id, 'raw=', body.id);
 
     if (!expected) return NextResponse.json({ error: 'admin password not configured' }, { status: 500 });
     if (password !== expected) return NextResponse.json({ error: 'wrong password' }, { status: 401 });
-    const numId = typeof id === 'string' ? parseInt(id, 10) : id;
-    if (!numId || typeof numId !== 'number' || isNaN(numId)) return NextResponse.json({ error: 'id required' }, { status: 400 });
+    if (!id || isNaN(id)) return NextResponse.json({ error: `id required, got: ${JSON.stringify(body.id)}` }, { status: 400 });
 
-    const removed = await removeGame(numId);
-    if (!removed) return NextResponse.json({ error: 'not found' }, { status: 404 });
+    const removed = await removeGame(id);
+    if (!removed) return NextResponse.json({ error: `not found: id=${id}` }, { status: 404 });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[/api/coeiha/admin-games DELETE] error', err);
