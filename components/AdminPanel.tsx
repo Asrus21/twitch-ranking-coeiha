@@ -28,6 +28,8 @@ export function AdminPanel() {
     refreshAbout,
     games,
     refreshGames,
+    addGameToList,
+    removeGameFromList,
   } = useApp();
 
   const [open, setOpen] = useState(false);
@@ -610,12 +612,12 @@ export function AdminPanel() {
                           body: JSON.stringify({ password: adminPassword, title, imageUrl, collection: gameCollection }),
                         });
                         if (res.ok) {
-                          await res.json();
+                          const newGame = await res.json();
+                          addGameToList(newGame); // instant UI update
                           setSelectedGame(null);
                           setManualImageUrl('');
                           setGameQuery('');
                           setGameResults([]);
-                          await refreshGames();
                           setMsg(lang === 'pt' ? 'Jogo adicionado!' : 'Game added!');
                           setTimeout(() => setMsg(null), 2000);
                         } else {
@@ -658,7 +660,7 @@ export function AdminPanel() {
                                       body: JSON.stringify({ password: adminPassword, id: game.id }),
                                     });
                                     if (res.ok) {
-                                      await refreshGames();
+                                      removeGameFromList(game.id); // instant UI update
                                     }
                                   }}
                                   className="w-full py-1 bg-red-500/90 text-white text-[9px] font-bold uppercase tracking-widest hover:bg-red-600 transition-all flex-shrink-0"
