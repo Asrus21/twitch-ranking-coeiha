@@ -30,6 +30,7 @@ export function AdminPanel() {
     refreshGames,
     addGameToList,
     removeGameFromList,
+    applyGames,
   } = useApp();
 
   const [open, setOpen] = useState(false);
@@ -669,10 +670,11 @@ export function AdminPanel() {
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ password: adminPassword, id: Number(game.id) }),
                                       });
-                                      if (res.ok || res.status === 404) {
-                                        removeGameFromList(game.id);
-                                      } else {
-                                        const data = await res.json().catch(() => ({}));
+                                      const data = await res.json().catch(() => ({}));
+                                      if ((res.ok || res.status === 404) && Array.isArray(data.games)) {
+                                        // Use the authoritative list from DB — no more optimistic guessing
+                                        applyGames(data.games);
+                                      } else if (!res.ok) {
                                         setRemoveError(`Erro ${res.status}: ${data.error ?? 'falhou'}`);
                                       }
                                     } catch (e) {

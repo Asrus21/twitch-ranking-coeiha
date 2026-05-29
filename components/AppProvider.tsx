@@ -39,6 +39,7 @@ type Ctx = {
   refreshGames: () => Promise<void>;
   addGameToList: (game: GameEntry) => void;
   removeGameFromList: (id: number) => void;
+  applyGames: (games: GameEntry[]) => void;
   // admin session
   adminPassword: string | null;
   isAdmin: boolean;
@@ -122,6 +123,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setGames((prev) => prev.filter((g) => g.id !== id));
   }, []);
 
+  const applyGames = useCallback((incoming: GameEntry[]) => {
+    setGames(incoming);
+  }, []);
+
   useEffect(() => {
     refreshAbout();
     refreshGames();
@@ -177,6 +182,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         refreshGames,
         addGameToList,
         removeGameFromList,
+        applyGames,
         adminPassword,
         isAdmin: adminPassword !== null,
         adminLogin,
