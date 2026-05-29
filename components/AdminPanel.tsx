@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useApp } from './AppProvider';
 import { parseCards, type AboutCard } from '@/lib/cards';
-import type { GameEntry, GameCollection } from '@/lib/db';
+import type { GameCollection } from '@/lib/db';
 
 type GameSearchResult = { id: number; name: string; imageUrl: string | null };
 
@@ -26,6 +26,8 @@ export function AdminPanel() {
     adminLogout,
     about,
     refreshAbout,
+    games,
+    refreshGames,
   } = useApp();
 
   const [open, setOpen] = useState(false);
@@ -54,7 +56,6 @@ export function AdminPanel() {
   const [removeBusy, setRemoveBusy] = useState(false);
 
   // Games management
-  const [games, setGames] = useState<GameEntry[]>([]);
   const [gameQuery, setGameQuery] = useState('');
   const [gameResults, setGameResults] = useState<GameSearchResult[]>([]);
   const [gameSearching, setGameSearching] = useState(false);
@@ -87,14 +88,6 @@ export function AdminPanel() {
     setMsg(null);
     setShowResetConfirm(false);
   }, [open, isAdmin, about]);
-
-  useEffect(() => {
-    if (!open || !isAdmin) return;
-    fetch('/api/coeiha/games')
-      .then((r) => r.json())
-      .then(setGames)
-      .catch(console.error);
-  }, [open, isAdmin]);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -617,13 +610,12 @@ export function AdminPanel() {
                           body: JSON.stringify({ password: adminPassword, title, imageUrl, collection: gameCollection }),
                         });
                         if (res.ok) {
-                          const game = await res.json();
-                          setGames((prev) => [...prev, game]);
+                          await res.json();
                           setSelectedGame(null);
                           setManualImageUrl('');
                           setGameQuery('');
                           setGameResults([]);
-                          window.dispatchEvent(new CustomEvent('coeiha:refresh-games'));
+                          await refreshGames();
                           setMsg(lang === 'pt' ? 'Jogo adicionado!' : 'Game added!');
                           setTimeout(() => setMsg(null), 2000);
                         } else {
@@ -668,8 +660,7 @@ export function AdminPanel() {
                                         body: JSON.stringify({ password: adminPassword, id: game.id }),
                                       });
                                       if (res.ok) {
-                                        setGames((prev) => prev.filter((g) => g.id !== game.id));
-                                        window.dispatchEvent(new CustomEvent('coeiha:refresh-games'));
+                                        await refreshGames();
                                       }
                                     }}
                                     className="px-2 py-1 rounded-full bg-red-500 text-white text-[9px] font-bold uppercase tracking-widest hover:bg-red-600 transition-all"
