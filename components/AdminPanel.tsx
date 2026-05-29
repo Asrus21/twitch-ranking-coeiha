@@ -670,10 +670,7 @@ export function AdminPanel() {
                                         body: JSON.stringify({ password: adminPassword, id: Number(game.id) }),
                                       });
                                       if (res.ok || res.status === 404) {
-                                        // 404 = já não existe no banco (fantasma de outro branch/cache).
-                                        // Some da tela de qualquer jeito; refreshGames confirma o estado real.
                                         removeGameFromList(game.id);
-                                        await refreshGames();
                                       } else {
                                         const data = await res.json().catch(() => ({}));
                                         setRemoveError(`Erro ${res.status}: ${data.error ?? 'falhou'}`);
