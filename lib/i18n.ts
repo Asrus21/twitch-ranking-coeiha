@@ -76,6 +76,12 @@ type Dict = {
     showReset: string;
     resetSuccess: string;
     resetError: string;
+    addPointsTitle: string;
+    addPointsUser: string;
+    addPointsPts: string;
+    addPointsBtn: string;
+    addPointsSuccess: string;
+    addPointsError: string;
   };
   footer: { made: string; by: string };
 };
@@ -166,6 +172,12 @@ export const translations: Record<Lang, Dict> = {
       showReset: 'Mostrar opções de reset',
       resetSuccess: 'Ranking resetado',
       resetError: 'Erro ao resetar',
+      addPointsTitle: 'Adicionar pontos manualmente',
+      addPointsUser: 'Usuário (nick da Twitch)',
+      addPointsPts: 'Quantidade de pontos',
+      addPointsBtn: 'Adicionar pontos',
+      addPointsSuccess: 'Pontos adicionados!',
+      addPointsError: 'Erro ao adicionar pontos',
     },
     footer: {
       made: 'Feito com',
@@ -257,6 +269,12 @@ export const translations: Record<Lang, Dict> = {
       showReset: 'Show reset options',
       resetSuccess: 'Ranking reset',
       resetError: 'Reset failed',
+      addPointsTitle: 'Add points manually',
+      addPointsUser: 'Username (Twitch nick)',
+      addPointsPts: 'Number of points',
+      addPointsBtn: 'Add points',
+      addPointsSuccess: 'Points added!',
+      addPointsError: 'Failed to add points',
     },
     footer: {
       made: 'Made with',
