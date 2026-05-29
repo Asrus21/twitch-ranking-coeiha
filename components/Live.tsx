@@ -32,6 +32,11 @@ export function Live() {
   const [status, setStatus] = useState<Status | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<GameCollection>('playing');
+  const [twitchParent, setTwitchParent] = useState('asrus.app');
+
+  useEffect(() => {
+    setTwitchParent(window.location.hostname);
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -84,7 +89,7 @@ export function Live() {
             <>
               <div className="aspect-video bg-black">
                 <iframe
-                  src={`https://player.twitch.tv/?channel=${channel}&parent=${typeof window !== 'undefined' ? window.location.hostname : 'asrus.app'}&muted=true`}
+                  src={`https://player.twitch.tv/?channel=${channel}&parent=${twitchParent}&muted=true`}
                   className="w-full h-full"
                   allowFullScreen
                   title="Twitch stream"
