@@ -482,6 +482,11 @@ export function AdminPanel() {
 
                 {/* Search */}
                 <div className="space-y-3 mb-6">
+                  <p className="text-[11px] text-[var(--fg-muted)] font-mono leading-relaxed">
+                    {lang === 'pt'
+                      ? 'Busca jogos da Steam automaticamente. Para Riot, EA, Epic, Ubisoft, etc., adicione STEAMGRIDDB_API_KEY nas env vars (grátis em steamgriddb.com) — ou cole a URL da imagem manualmente.'
+                      : 'Auto-searches Steam. For Riot, EA, Epic, Ubisoft, etc., add STEAMGRIDDB_API_KEY to env vars (free at steamgriddb.com) — or paste an image URL manually.'}
+                  </p>
                   <div className="flex gap-2">
                     <input
                       type="text"
