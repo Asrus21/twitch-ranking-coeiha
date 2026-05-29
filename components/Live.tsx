@@ -33,6 +33,7 @@ export function Live() {
   const [loading, setLoading] = useState(true);
   const [games, setGames] = useState<GameEntry[]>([]);
   const [activeTab, setActiveTab] = useState<GameCollection>('playing');
+  const [gamesRefresh, setGamesRefresh] = useState(0);
 
   useEffect(() => {
     const load = async () => {
@@ -50,21 +51,28 @@ export function Live() {
     return () => clearInterval(id);
   }, []);
 
+  // Separate listener effect so fetchGames always runs with fresh deps
   useEffect(() => {
-    const fetchGames = () =>
-      fetch('/api/coeiha/games')
-        .then((r) => r.json())
-        .then((data: GameEntry[]) => {
-          setGames(data);
-          const first = COLLECTIONS.find((c) => data.some((g) => g.collection === c.key));
-          if (first) setActiveTab((prev) => (data.some((g) => g.collection === prev) ? prev : first.key));
-        })
-        .catch(console.error);
-
-    fetchGames();
-    window.addEventListener('coeiha:refresh-games', fetchGames);
-    return () => window.removeEventListener('coeiha:refresh-games', fetchGames);
+    const trigger = () => setGamesRefresh((n) => n + 1);
+    window.addEventListener('coeiha:refresh-games', trigger);
+    return () => window.removeEventListener('coeiha:refresh-games', trigger);
   }, []);
+
+  useEffect(() => {
+    fetch('/api/coeiha/games', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((data: GameEntry[]) => {
+        setGames(data);
+        // Switch to first populated tab if current tab has no games
+        setActiveTab((prev) => {
+          const hasGamesInCurrent = data.some((g) => g.collection === prev);
+          if (hasGamesInCurrent) return prev;
+          const first = COLLECTIONS.find((c) => data.some((g) => g.collection === c.key));
+          return first ? first.key : prev;
+        });
+      })
+      .catch(console.error);
+  }, [gamesRefresh]);
 
   const isLive = status?.live === true;
   const channel = status?.channel || 'coeiha';
