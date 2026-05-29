@@ -15,6 +15,16 @@ function getSql(): NeonQueryFunction<false, false> {
   return _sql;
 }
 
+/** Returns the DB host (for diagnostics) without exposing credentials. */
+export function getDbHost(): string {
+  const cs = process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
+  try {
+    return new URL(cs).host;
+  } catch {
+    return cs ? 'unparseable' : 'unset';
+  }
+}
+
 export type RankingEntry = {
   username: string;
   displayName: string;

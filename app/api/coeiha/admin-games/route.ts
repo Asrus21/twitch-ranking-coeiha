@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { addGame, removeGame, getGames, type GameCollection } from '@/lib/db';
+import { addGame, removeGame, getGames, getDbHost, type GameCollection } from '@/lib/db';
 
 export const runtime = 'nodejs';
 
@@ -40,11 +40,11 @@ export async function DELETE(req: NextRequest) {
     const removed = await removeGame(id);
     // Return the authoritative games list from DB so the client can sync state
     const remaining = await getGames();
+    console.log('[admin-games DELETE] dbHost=', getDbHost(), 'removed=', removed, 'remaining ids=', remaining.map(g => g.id));
     if (!removed) {
-      console.log('[admin-games DELETE] not found id=', id, 'remaining ids=', remaining.map(g => g.id));
-      return NextResponse.json({ error: `not found: id=${id}`, games: remaining }, { status: 404 });
+      return NextResponse.json({ error: `not found: id=${id}`, games: remaining, dbHost: getDbHost() }, { status: 404 });
     }
-    return NextResponse.json({ ok: true, games: remaining });
+    return NextResponse.json({ ok: true, games: remaining, dbHost: getDbHost() });
   } catch (err) {
     console.error('[/api/coeiha/admin-games DELETE] error', err);
     return NextResponse.json({ error: 'server error' }, { status: 500 });
