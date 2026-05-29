@@ -10,7 +10,6 @@ export type GameSearchResult = {
 
 // Steam store search — no API key required.
 // Cover image uses the vertical library format (600×900) which fits our 3:4 grid.
-// Falls back to the horizontal header if the vertical isn't available.
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get('q')?.trim();
   if (!q) return NextResponse.json([]);
@@ -29,7 +28,6 @@ export async function GET(req: NextRequest) {
     const results: GameSearchResult[] = items.slice(0, 8).map((g) => ({
       id: g.id,
       name: g.name,
-      // library_600x900 is the vertical box art — matches our 3:4 grid perfectly
       imageUrl: `https://cdn.akamai.steamstatic.com/steam/apps/${g.id}/library_600x900.jpg`,
     }));
 
