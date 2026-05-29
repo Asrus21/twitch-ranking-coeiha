@@ -15,11 +15,12 @@ function getSql(): NeonQueryFunction<false, false> {
   return _sql;
 }
 
-/** Returns the DB host (for diagnostics) without exposing credentials. */
+/** Returns "host/dbname" (for diagnostics) without exposing credentials. */
 export function getDbHost(): string {
   const cs = process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
   try {
-    return new URL(cs).host;
+    const u = new URL(cs);
+    return u.host + u.pathname; // e.g. ep-xxx-pooler.neon.tech/neondb
   } catch {
     return cs ? 'unparseable' : 'unset';
   }
