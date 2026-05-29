@@ -32,17 +32,19 @@ type RankEntry = { username: string; displayName: string; points: number; avatar
 
 function useCountUp(target: number, duration = 1400) {
   const [value, setValue] = useState(0);
-  const started = useRef(false);
+  const rafRef = useRef<number | null>(null);
   useEffect(() => {
-    if (!target || started.current) return;
-    started.current = true;
+    if (!target) return;
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    setValue(0);
     const start = performance.now();
     const tick = (now: number) => {
       const p = Math.min((now - start) / duration, 1);
       setValue(Math.round(p * target));
-      if (p < 1) requestAnimationFrame(tick);
+      if (p < 1) rafRef.current = requestAnimationFrame(tick);
     };
-    requestAnimationFrame(tick);
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, [target, duration]);
   return value;
 }
@@ -178,9 +180,9 @@ export function Hero() {
 
             {/* Stats row */}
             <div className="enter-fade enter-d-2 flex gap-3 mb-10 flex-wrap">
-              <StatCard value={totalPoints || 1} label="Pontos batidos" />
-              <StatCard value={uniqueViewers || 1} label="Viewers únicos" />
-              <StatCard value={15} label="Lives" />
+              <StatCard value={totalPoints} label="Pontos batidos" />
+              <StatCard value={uniqueViewers} label="Viewers únicos" />
+              <StatCard value={top3[0]?.points ?? 0} label="Lives" />
             </div>
 
             {/* CTAs */}
