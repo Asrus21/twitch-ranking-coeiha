@@ -299,8 +299,11 @@ export async function addGame(params: {
   return { id: r.id, title: r.title, imageUrl: r.image_url, collection: r.collection as GameCollection, sortOrder: r.sort_order };
 }
 
-export async function removeGame(id: number): Promise<boolean> {
+export async function removeGame(id: number): Promise<{ removed: boolean; existedBefore: boolean }> {
   await ensureSchema();
-  const rows = (await getSql()`DELETE FROM games WHERE id = ${id} RETURNING id`) as { id: number }[];
-  return rows.length > 0;
+  const sql = getSql();
+  // SELECT first to confirm the row is visible from this connection
+  const before = (await sql`SELECT id FROM games WHERE id = ${id}`) as { id: number }[];
+  const deleteRows = (await sql`DELETE FROM games WHERE id = ${id} RETURNING id`) as { id: number }[];
+  return { removed: deleteRows.length > 0, existedBefore: before.length > 0 };
 }

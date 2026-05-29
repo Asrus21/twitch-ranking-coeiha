@@ -37,12 +37,12 @@ export async function DELETE(req: NextRequest) {
     if (password !== expected) return NextResponse.json({ error: 'wrong password' }, { status: 401 });
     if (!id || isNaN(id)) return NextResponse.json({ error: `id required, got: ${JSON.stringify(body.id)}` }, { status: 400 });
 
-    const removed = await removeGame(id);
-    // Return the authoritative games list from DB so the client can sync state
+    const { removed, existedBefore } = await removeGame(id);
     const remaining = await getGames();
-    console.log('[admin-games DELETE] dbHost=', getDbHost(), 'removed=', removed, 'remaining ids=', remaining.map(g => g.id));
+    const diag = { dbHost: getDbHost(), id, existedBefore, removed, remainingIds: remaining.map(g => g.id) };
+    console.log('[admin-games DELETE]', diag);
     if (!removed) {
-      return NextResponse.json({ error: `not found: id=${id}`, games: remaining, dbHost: getDbHost() }, { status: 404 });
+      return NextResponse.json({ error: `not found: id=${id}`, existedBefore, games: remaining, dbHost: getDbHost() }, { status: 404 });
     }
     return NextResponse.json({ ok: true, games: remaining, dbHost: getDbHost() });
   } catch (err) {
