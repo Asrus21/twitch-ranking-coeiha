@@ -249,7 +249,7 @@ export function Hero() {
             <RankCard top3={top3} />
 
             {/* Floating badge bottom-left */}
-            <div className="absolute -bottom-4 -left-4 z-10 hero-float" style={{ animationDelay: '1.5s' }}>
+            <div className="absolute -bottom-10 -left-4 z-10 hero-float" style={{ animationDelay: '1.5s' }}>
               <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--bg-secondary)] border border-hotpink-500/60 shadow-xl">
                 <span className="text-lg">✦</span>
                 <div className="flex flex-col leading-none">
