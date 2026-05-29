@@ -191,3 +191,29 @@ export async function updateAboutSettings(
     `;
   }
 }
+
+export async function addPointsManually(params: {
+  username: string;
+  points: number;
+}): Promise<{ username: string; total: number }> {
+  await ensureSchema();
+  const username = params.username.toLowerCase().trim();
+  const pts = Math.max(1, Math.floor(params.points));
+
+  const rows = (await getSql()`
+    INSERT INTO pontos (username, display_name, avatar, points, updated_at)
+    VALUES (
+      ${username},
+      ${params.username.trim()},
+      'https://static-cdn.jtvnw.net/jtv_user_pictures/xarth/404_user_300x300.png',
+      ${pts},
+      NOW()
+    )
+    ON CONFLICT (username) DO UPDATE
+      SET points = pontos.points + ${pts},
+          updated_at = NOW()
+    RETURNING username, points
+  `) as { username: string; points: number }[];
+
+  return { username: rows[0].username, total: rows[0].points };
+}

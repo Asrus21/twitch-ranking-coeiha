@@ -34,6 +34,11 @@ export function AdminPanel() {
   const [cards, setCards] = useState<AboutCard[]>([]);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
+  // Manual points
+  const [addUser, setAddUser] = useState('');
+  const [addPts, setAddPts] = useState(1);
+  const [addBusy, setAddBusy] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -433,6 +438,73 @@ export function AdminPanel() {
                   <button onClick={addCard}
                     className="w-full px-4 py-2.5 rounded-full border border-dashed border-hotpink-500 text-hotpink-500 font-bold uppercase text-xs tracking-widest hover:bg-hotpink-500 hover:text-white transition-all">
                     + {t.admin.addCard}
+                  </button>
+                </div>
+              </section>
+
+              {/* ADD POINTS MANUALLY */}
+              <section className="pt-6 border-t border-[var(--border)]">
+                <h4 className="font-display text-2xl mb-4 flex items-center gap-2">
+                  <span className="text-hotpink-500">✦</span> {t.admin.addPointsTitle}
+                </h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-mono uppercase tracking-widest text-[var(--fg-muted)] mb-2">
+                      {t.admin.addPointsUser}
+                    </label>
+                    <input
+                      type="text"
+                      value={addUser}
+                      onChange={(e) => setAddUser(e.target.value)}
+                      placeholder="ex: asrus12"
+                      className="w-full px-4 py-3 rounded-lg bg-[var(--bg)] border border-[var(--border)] focus:border-hotpink-500 focus:outline-none font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-mono uppercase tracking-widest text-[var(--fg-muted)] mb-2">
+                      {t.admin.addPointsPts}
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={addPts}
+                      onChange={(e) => setAddPts(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                      className="w-full px-4 py-3 rounded-lg bg-[var(--bg)] border border-[var(--border)] focus:border-hotpink-500 focus:outline-none font-mono"
+                    />
+                  </div>
+                  <button
+                    disabled={addBusy || !addUser.trim()}
+                    onClick={async () => {
+                      if (!adminPassword || !addUser.trim()) return;
+                      setAddBusy(true);
+                      setError(null);
+                      setMsg(null);
+                      try {
+                        const res = await fetch('/api/coeiha/admin-add-points', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ password: adminPassword, username: addUser.trim(), points: addPts }),
+                        });
+                        if (res.ok) {
+                          const data = await res.json();
+                          setMsg(`${t.admin.addPointsSuccess} ${data.username} → ${data.total} pts`);
+                          setAddUser('');
+                          setAddPts(1);
+                          window.dispatchEvent(new CustomEvent('coeiha:refresh-ranking'));
+                          setTimeout(() => setMsg(null), 3000);
+                        } else {
+                          const data = await res.json().catch(() => ({}));
+                          setError(data.error || t.admin.addPointsError);
+                        }
+                      } catch {
+                        setError(t.admin.addPointsError);
+                      } finally {
+                        setAddBusy(false);
+                      }
+                    }}
+                    className="w-full px-4 py-3 rounded-full bg-hotpink-500 text-white font-bold uppercase text-xs tracking-widest hover:bg-hotpink-600 disabled:opacity-50 transition-all"
+                  >
+                    {addBusy ? '...' : t.admin.addPointsBtn}
                   </button>
                 </div>
               </section>
