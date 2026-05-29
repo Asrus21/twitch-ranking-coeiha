@@ -82,6 +82,12 @@ type Dict = {
     addPointsBtn: string;
     addPointsSuccess: string;
     addPointsError: string;
+    removeTitle: string;
+    removeUser: string;
+    removeBtn: string;
+    removeSuccess: string;
+    removeError: string;
+    removeNotFound: string;
   };
   footer: { made: string; by: string };
 };
@@ -178,6 +184,12 @@ export const translations: Record<Lang, Dict> = {
       addPointsBtn: 'Adicionar pontos',
       addPointsSuccess: 'Pontos adicionados!',
       addPointsError: 'Erro ao adicionar pontos',
+      removeTitle: 'Remover nick do ranking',
+      removeUser: 'Usuário (nick da Twitch)',
+      removeBtn: 'Remover do ranking',
+      removeSuccess: 'Removido do ranking',
+      removeError: 'Erro ao remover',
+      removeNotFound: 'Usuário não encontrado no ranking',
     },
     footer: {
       made: 'Feito com',
@@ -275,6 +287,12 @@ export const translations: Record<Lang, Dict> = {
       addPointsBtn: 'Add points',
       addPointsSuccess: 'Points added!',
       addPointsError: 'Failed to add points',
+      removeTitle: 'Remove nick from ranking',
+      removeUser: 'Username (Twitch nick)',
+      removeBtn: 'Remove from ranking',
+      removeSuccess: 'Removed from ranking',
+      removeError: 'Failed to remove',
+      removeNotFound: 'User not found in ranking',
     },
     footer: {
       made: 'Made with',

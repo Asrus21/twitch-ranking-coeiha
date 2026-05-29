@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useApp } from './AppProvider';
 
 export function Header() {
@@ -10,23 +11,31 @@ export function Header() {
   };
 
   const logoSrc = about.logoUrl || '/logo.png';
+  const [logoFailed, setLogoFailed] = useState(false);
+
+  // Reset the failed flag whenever the source changes (e.g. admin uploads a
+  // new logo) so we try loading the new one before falling back.
+  useEffect(() => {
+    setLogoFailed(false);
+  }, [logoSrc]);
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-md bg-[var(--bg)]/70 border-b border-[var(--border)]">
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
         <a href="#top" className="flex items-center gap-3 group">
           <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-hotpink-500 glow-pink group-hover:animate-glow">
-            <img
-              src={logoSrc}
-              alt="logo"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-            />
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-hotpink-500 to-hotpink-700 text-white font-display text-2xl -z-10">
-              C
-            </div>
+            {!logoFailed ? (
+              <img
+                src={logoSrc}
+                alt="logo"
+                className="w-full h-full object-cover"
+                onError={() => setLogoFailed(true)}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-hotpink-500 to-hotpink-700 text-white font-display text-2xl">
+                C
+              </div>
+            )}
           </div>
           <span className="font-display text-2xl tracking-wider text-[var(--fg)]">
             Co<span className="text-hotpink-500">el</span>ha
