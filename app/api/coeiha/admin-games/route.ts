@@ -31,9 +31,10 @@ export async function DELETE(req: NextRequest) {
 
     if (!expected) return NextResponse.json({ error: 'admin password not configured' }, { status: 500 });
     if (password !== expected) return NextResponse.json({ error: 'wrong password' }, { status: 401 });
-    if (!id || typeof id !== 'number') return NextResponse.json({ error: 'id required' }, { status: 400 });
+    const numId = typeof id === 'string' ? parseInt(id, 10) : id;
+    if (!numId || typeof numId !== 'number' || isNaN(numId)) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-    const removed = await removeGame(id);
+    const removed = await removeGame(numId);
     if (!removed) return NextResponse.json({ error: 'not found' }, { status: 404 });
     return NextResponse.json({ ok: true });
   } catch (err) {

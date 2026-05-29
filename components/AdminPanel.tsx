@@ -646,28 +646,26 @@ export function AdminPanel() {
                           </p>
                           <div className="grid grid-cols-4 gap-2">
                             {colGames.map((game) => (
-                              <div key={game.id} className="relative group rounded-lg overflow-hidden border border-[var(--border)] aspect-[3/4]">
+                              <div key={game.id} className="relative rounded-lg overflow-hidden border border-[var(--border)] aspect-[3/4] flex flex-col">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={game.imageUrl} alt={game.title} className="w-full h-full object-cover" loading="lazy" />
-                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-1">
-                                  <p className="text-white text-[9px] font-bold text-center line-clamp-3">{game.title}</p>
-                                  <button
-                                    onClick={async () => {
-                                      if (!adminPassword) return;
-                                      const res = await fetch('/api/coeiha/admin-games', {
-                                        method: 'DELETE',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ password: adminPassword, id: game.id }),
-                                      });
-                                      if (res.ok) {
-                                        await refreshGames();
-                                      }
-                                    }}
-                                    className="px-2 py-1 rounded-full bg-red-500 text-white text-[9px] font-bold uppercase tracking-widest hover:bg-red-600 transition-all"
-                                  >
+                                <img src={game.imageUrl} alt={game.title} className="flex-1 w-full object-cover" loading="lazy" />
+                                <button
+                                  onClick={async () => {
+                                    if (!adminPassword) return;
+                                    const res = await fetch('/api/coeiha/admin-games', {
+                                      method: 'DELETE',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ password: adminPassword, id: game.id }),
+                                    });
+                                    if (res.ok) {
+                                      await refreshGames();
+                                    }
+                                  }}
+                                  className="w-full py-1 bg-red-500/90 text-white text-[9px] font-bold uppercase tracking-widest hover:bg-red-600 transition-all flex-shrink-0"
+                                  title={game.title}
+                                >
                                     {lang === 'pt' ? 'Remover' : 'Remove'}
-                                  </button>
-                                </div>
+                                </button>
                               </div>
                             ))}
                           </div>
