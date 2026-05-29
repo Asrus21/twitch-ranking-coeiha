@@ -8,27 +8,31 @@ export type GameSearchResult = {
   imageUrl: string | null;
 };
 
+// Steam store search — no API key required.
+// Cover image uses the vertical library format (600×900) which fits our 3:4 grid.
+// Falls back to the horizontal header if the vertical isn't available.
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get('q')?.trim();
   if (!q) return NextResponse.json([]);
 
-  const apiKey = process.env.RAWG_API_KEY;
-  if (!apiKey) {
-    // No API key configured — return empty so admin falls back to manual URL input
-    return NextResponse.json([]);
-  }
-
   try {
-    const url = `https://api.rawg.io/api/games?key=${encodeURIComponent(apiKey)}&search=${encodeURIComponent(q)}&page_size=8&ordering=-rating`;
-    const res = await fetch(url, { cache: 'no-store' });
+    const url = `https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(q)}&l=english&cc=US`;
+    const res = await fetch(url, {
+      cache: 'no-store',
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+    });
     if (!res.ok) return NextResponse.json([]);
 
     const data = await res.json();
-    const results: GameSearchResult[] = (data.results ?? []).map((g: { id: number; name: string; background_image?: string }) => ({
+    const items: Array<{ id: number; name: string }> = data.items ?? [];
+
+    const results: GameSearchResult[] = items.slice(0, 8).map((g) => ({
       id: g.id,
       name: g.name,
-      imageUrl: g.background_image ?? null,
+      // library_600x900 is the vertical box art — matches our 3:4 grid perfectly
+      imageUrl: `https://cdn.akamai.steamstatic.com/steam/apps/${g.id}/library_600x900.jpg`,
     }));
+
     return NextResponse.json(results);
   } catch (err) {
     console.error('[/api/coeiha/admin-game-search] error', err);
