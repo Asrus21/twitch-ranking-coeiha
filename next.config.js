@@ -10,6 +10,7 @@ const nextConfig = {
       { protocol: 'https', hostname: 'decapi.me' },
       { protocol: 'https', hostname: 'api.dicebear.com' },
       { protocol: 'https', hostname: 'media.rawg.io' },
+      { protocol: 'https', hostname: 'cdn.akamai.steamstatic.com' },
     ],
   },
 };
