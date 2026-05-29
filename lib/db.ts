@@ -58,6 +58,16 @@ function ensureSchema(): Promise<void> {
         )
       `;
       await getSql()`CREATE INDEX IF NOT EXISTS pontos_points_idx ON pontos (points DESC)`;
+      await getSql()`
+        CREATE TABLE IF NOT EXISTS games (
+          id          SERIAL PRIMARY KEY,
+          title       TEXT NOT NULL,
+          image_url   TEXT NOT NULL,
+          collection  TEXT NOT NULL CHECK (collection IN ('playing','favorites','finished','played')),
+          sort_order  INTEGER NOT NULL DEFAULT 0,
+          created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `;
     })().catch((err) => {
       schemaReady = null; // allow retry on next call if schema setup failed
       throw err;
@@ -229,5 +239,52 @@ export async function removeUser(username: string): Promise<boolean> {
   const rows = (await getSql()`
     DELETE FROM pontos WHERE username = ${uname} RETURNING username
   `) as { username: string }[];
+  return rows.length > 0;
+}
+
+export type GameCollection = 'playing' | 'favorites' | 'finished' | 'played';
+
+export type GameEntry = {
+  id: number;
+  title: string;
+  imageUrl: string;
+  collection: GameCollection;
+  sortOrder: number;
+};
+
+export async function getGames(): Promise<GameEntry[]> {
+  await ensureSchema();
+  const rows = (await getSql()`
+    SELECT id, title, image_url, collection, sort_order
+    FROM games
+    ORDER BY collection, sort_order ASC, created_at ASC
+  `) as Array<{ id: number; title: string; image_url: string; collection: string; sort_order: number }>;
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    imageUrl: r.image_url,
+    collection: r.collection as GameCollection,
+    sortOrder: r.sort_order,
+  }));
+}
+
+export async function addGame(params: {
+  title: string;
+  imageUrl: string;
+  collection: GameCollection;
+}): Promise<GameEntry> {
+  await ensureSchema();
+  const rows = (await getSql()`
+    INSERT INTO games (title, image_url, collection, sort_order)
+    VALUES (${params.title}, ${params.imageUrl}, ${params.collection}, 0)
+    RETURNING id, title, image_url, collection, sort_order
+  `) as Array<{ id: number; title: string; image_url: string; collection: string; sort_order: number }>;
+  const r = rows[0];
+  return { id: r.id, title: r.title, imageUrl: r.image_url, collection: r.collection as GameCollection, sortOrder: r.sort_order };
+}
+
+export async function removeGame(id: number): Promise<boolean> {
+  await ensureSchema();
+  const rows = (await getSql()`DELETE FROM games WHERE id = ${id} RETURNING id`) as { id: number }[];
   return rows.length > 0;
 }

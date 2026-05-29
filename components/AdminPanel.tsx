@@ -3,6 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useApp } from './AppProvider';
 import { parseCards, type AboutCard } from '@/lib/cards';
+import type { GameEntry, GameCollection } from '@/lib/db';
+
+type GameSearchResult = { id: number; name: string; imageUrl: string | null };
+
+const GAME_COLLECTIONS: { key: GameCollection; labelPt: string; labelEn: string }[] = [
+  { key: 'playing',   labelPt: 'Jogando agora',  labelEn: 'Playing now' },
+  { key: 'favorites', labelPt: 'Favoritos',       labelEn: 'Favourites' },
+  { key: 'finished',  labelPt: 'Zerados em live', labelEn: 'Finished on stream' },
+  { key: 'played',    labelPt: 'Jogados',          labelEn: 'Played' },
+];
 
 const MAX_IMAGE_BYTES = 2_000_000;
 
@@ -43,6 +53,16 @@ export function AdminPanel() {
   const [removeName, setRemoveName] = useState('');
   const [removeBusy, setRemoveBusy] = useState(false);
 
+  // Games management
+  const [games, setGames] = useState<GameEntry[]>([]);
+  const [gameQuery, setGameQuery] = useState('');
+  const [gameResults, setGameResults] = useState<GameSearchResult[]>([]);
+  const [gameSearching, setGameSearching] = useState(false);
+  const [selectedGame, setSelectedGame] = useState<GameSearchResult | null>(null);
+  const [manualImageUrl, setManualImageUrl] = useState('');
+  const [gameCollection, setGameCollection] = useState<GameCollection>('playing');
+  const [gameBusy, setGameBusy] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -67,6 +87,14 @@ export function AdminPanel() {
     setMsg(null);
     setShowResetConfirm(false);
   }, [open, isAdmin, about]);
+
+  useEffect(() => {
+    if (!open || !isAdmin) return;
+    fetch('/api/coeiha/games')
+      .then((r) => r.json())
+      .then(setGames)
+      .catch(console.error);
+  }, [open, isAdmin]);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -444,6 +472,214 @@ export function AdminPanel() {
                     + {t.admin.addCard}
                   </button>
                 </div>
+              </section>
+
+              {/* GAMES SECTION */}
+              <section className="pt-6 border-t border-[var(--border)]">
+                <h4 className="font-display text-2xl mb-4 flex items-center gap-2">
+                  <span className="text-hotpink-500">✦</span> {lang === 'pt' ? 'Jogos' : 'Games'}
+                </h4>
+
+                {/* Search */}
+                <div className="space-y-3 mb-6">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={gameQuery}
+                      onChange={(e) => setGameQuery(e.target.value)}
+                      placeholder={lang === 'pt' ? 'Buscar jogo...' : 'Search game...'}
+                      className="flex-1 px-4 py-3 rounded-lg bg-[var(--bg)] border border-[var(--border)] focus:border-hotpink-500 focus:outline-none"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          setGameSearching(true);
+                          setGameResults([]);
+                          setSelectedGame(null);
+                          fetch(`/api/coeiha/admin-game-search?q=${encodeURIComponent(gameQuery)}`)
+                            .then((r) => r.json())
+                            .then(setGameResults)
+                            .catch(console.error)
+                            .finally(() => setGameSearching(false));
+                        }
+                      }}
+                    />
+                    <button
+                      disabled={gameSearching || !gameQuery.trim()}
+                      onClick={() => {
+                        setGameSearching(true);
+                        setGameResults([]);
+                        setSelectedGame(null);
+                        fetch(`/api/coeiha/admin-game-search?q=${encodeURIComponent(gameQuery)}`)
+                          .then((r) => r.json())
+                          .then(setGameResults)
+                          .catch(console.error)
+                          .finally(() => setGameSearching(false));
+                      }}
+                      className="px-4 py-3 rounded-lg bg-hotpink-500 text-white font-bold uppercase text-xs tracking-widest hover:bg-hotpink-600 disabled:opacity-50 transition-all"
+                    >
+                      {gameSearching ? '...' : '🔍'}
+                    </button>
+                  </div>
+
+                  {/* Search results */}
+                  {gameResults.length > 0 && (
+                    <div className="grid grid-cols-4 gap-2">
+                      {gameResults.map((r) => (
+                        <button
+                          key={r.id}
+                          onClick={() => { setSelectedGame(r); setGameResults([]); setGameQuery(r.name); setManualImageUrl(''); }}
+                          className={`relative rounded-lg overflow-hidden border-2 aspect-[3/4] transition-all ${selectedGame?.id === r.id ? 'border-hotpink-500' : 'border-transparent hover:border-hotpink-500/60'}`}
+                        >
+                          {r.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={r.imageUrl} alt={r.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-[var(--bg)] flex items-center justify-center text-[var(--fg-muted)] text-xs p-1 text-center">{r.name}</div>
+                          )}
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-1">
+                            <p className="text-white text-[9px] font-bold line-clamp-2 leading-tight">{r.name}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Selected game preview or manual URL */}
+                  {selectedGame && (
+                    <div className="flex items-center gap-3 p-3 rounded-lg border border-hotpink-500/40 bg-hotpink-500/5">
+                      {selectedGame.imageUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={selectedGame.imageUrl} alt={selectedGame.name} className="w-10 h-14 object-cover rounded" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate">{selectedGame.name}</p>
+                        <p className="text-xs text-hotpink-500">✓ {lang === 'pt' ? 'selecionado' : 'selected'}</p>
+                      </div>
+                      <button onClick={() => { setSelectedGame(null); setGameQuery(''); }} className="text-[var(--fg-muted)] hover:text-red-500 text-xs">✕</button>
+                    </div>
+                  )}
+
+                  {/* Manual URL fallback */}
+                  {!selectedGame && (
+                    <div>
+                      <label className="block text-[10px] font-mono uppercase tracking-widest text-[var(--fg-muted)] mb-1">
+                        {lang === 'pt' ? 'Ou cole a URL da imagem' : 'Or paste image URL'}
+                      </label>
+                      <input
+                        type="url"
+                        value={manualImageUrl}
+                        onChange={(e) => setManualImageUrl(e.target.value)}
+                        placeholder="https://..."
+                        className="w-full px-4 py-2.5 rounded-lg bg-[var(--bg)] border border-[var(--border)] focus:border-hotpink-500 focus:outline-none text-sm font-mono"
+                      />
+                    </div>
+                  )}
+
+                  {/* Collection picker */}
+                  <div>
+                    <label className="block text-xs font-mono uppercase tracking-widest text-[var(--fg-muted)] mb-2">
+                      {lang === 'pt' ? 'Coleção' : 'Collection'}
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {GAME_COLLECTIONS.map((col) => (
+                        <button
+                          key={col.key}
+                          onClick={() => setGameCollection(col.key)}
+                          className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border transition-all ${
+                            gameCollection === col.key
+                              ? 'bg-hotpink-500 border-hotpink-500 text-white'
+                              : 'border-[var(--border)] text-[var(--fg-muted)] hover:border-hotpink-500 hover:text-hotpink-500'
+                          }`}
+                        >
+                          {lang === 'pt' ? col.labelPt : col.labelEn}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    disabled={gameBusy || (!selectedGame && !manualImageUrl.trim())}
+                    onClick={async () => {
+                      if (!adminPassword) return;
+                      const title = selectedGame?.name || gameQuery.trim() || 'Unknown';
+                      const imageUrl = selectedGame?.imageUrl || manualImageUrl.trim();
+                      if (!imageUrl) return;
+                      setGameBusy(true);
+                      setError(null);
+                      try {
+                        const res = await fetch('/api/coeiha/admin-games', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ password: adminPassword, title, imageUrl, collection: gameCollection }),
+                        });
+                        if (res.ok) {
+                          const game = await res.json();
+                          setGames((prev) => [...prev, game]);
+                          setSelectedGame(null);
+                          setManualImageUrl('');
+                          setGameQuery('');
+                          setGameResults([]);
+                          window.dispatchEvent(new CustomEvent('coeiha:refresh-games'));
+                          setMsg(lang === 'pt' ? 'Jogo adicionado!' : 'Game added!');
+                          setTimeout(() => setMsg(null), 2000);
+                        } else {
+                          setError(lang === 'pt' ? 'Erro ao adicionar jogo' : 'Failed to add game');
+                        }
+                      } catch {
+                        setError(lang === 'pt' ? 'Erro ao adicionar jogo' : 'Failed to add game');
+                      } finally {
+                        setGameBusy(false);
+                      }
+                    }}
+                    className="w-full px-4 py-3 rounded-full bg-hotpink-500 text-white font-bold uppercase text-xs tracking-widest hover:bg-hotpink-600 disabled:opacity-50 transition-all"
+                  >
+                    {gameBusy ? '...' : (lang === 'pt' ? '+ Adicionar jogo' : '+ Add game')}
+                  </button>
+                </div>
+
+                {/* Games list grouped by collection */}
+                {games.length > 0 && (
+                  <div className="space-y-4">
+                    {GAME_COLLECTIONS.map((col) => {
+                      const colGames = games.filter((g) => g.collection === col.key);
+                      if (colGames.length === 0) return null;
+                      return (
+                        <div key={col.key}>
+                          <p className="text-xs font-mono uppercase tracking-widest text-[var(--fg-muted)] mb-2">
+                            {lang === 'pt' ? col.labelPt : col.labelEn}
+                          </p>
+                          <div className="grid grid-cols-4 gap-2">
+                            {colGames.map((game) => (
+                              <div key={game.id} className="relative group rounded-lg overflow-hidden border border-[var(--border)] aspect-[3/4]">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={game.imageUrl} alt={game.title} className="w-full h-full object-cover" loading="lazy" />
+                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-1">
+                                  <p className="text-white text-[9px] font-bold text-center line-clamp-3">{game.title}</p>
+                                  <button
+                                    onClick={async () => {
+                                      if (!adminPassword) return;
+                                      const res = await fetch('/api/coeiha/admin-games', {
+                                        method: 'DELETE',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ password: adminPassword, id: game.id }),
+                                      });
+                                      if (res.ok) {
+                                        setGames((prev) => prev.filter((g) => g.id !== game.id));
+                                        window.dispatchEvent(new CustomEvent('coeiha:refresh-games'));
+                                      }
+                                    }}
+                                    className="px-2 py-1 rounded-full bg-red-500 text-white text-[9px] font-bold uppercase tracking-widest hover:bg-red-600 transition-all"
+                                  >
+                                    {lang === 'pt' ? 'Remover' : 'Remove'}
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </section>
 
               {/* ADD POINTS MANUALLY */}
