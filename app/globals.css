@@ -212,6 +212,15 @@ html, body {
   }
 }
 
+/* Hero floating badge animation */
+.hero-float {
+  animation: hero-float 4s ease-in-out infinite;
+}
+@keyframes hero-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
 /* Terminal cursor blink — slightly slower than before to feel less hectic */
 .terminal-cursor {
   animation: blink 1.2s steps(2) infinite;
@@ -229,7 +238,8 @@ html, body {
   .orb,
   .terminal-cursor,
   .animate-pulse-pink,
-  .marquee-track {
+  .marquee-track,
+  .hero-float {
     animation: none;
   }
   .enter-fade {
