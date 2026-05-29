@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // The app is served from a nested route on a custom domain, so static
+  // assets must be referenced by absolute URL — without this the CSS/JS
+  // chunks fail to resolve and the page renders unstyled.
+  assetPrefix: 'https://twitch-ranking-coeiha.vercel.app',
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'static-cdn.jtvnw.net' },
