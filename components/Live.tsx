@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useApp } from './AppProvider';
-import type { GameEntry, GameCollection } from '@/lib/db';
+import type { GameCollection } from '@/lib/db';
 
 type Status = {
   live: boolean;
@@ -28,12 +28,10 @@ const COLLECTIONS: CollectionMeta[] = [
 ];
 
 export function Live() {
-  const { t, lang } = useApp();
+  const { t, lang, games } = useApp();
   const [status, setStatus] = useState<Status | null>(null);
   const [loading, setLoading] = useState(true);
-  const [games, setGames] = useState<GameEntry[]>([]);
   const [activeTab, setActiveTab] = useState<GameCollection>('playing');
-  const [gamesRefresh, setGamesRefresh] = useState(0);
 
   useEffect(() => {
     const load = async () => {
@@ -51,28 +49,15 @@ export function Live() {
     return () => clearInterval(id);
   }, []);
 
-  // Separate listener effect so fetchGames always runs with fresh deps
+  // When games list changes, ensure the active tab has content
   useEffect(() => {
-    const trigger = () => setGamesRefresh((n) => n + 1);
-    window.addEventListener('coeiha:refresh-games', trigger);
-    return () => window.removeEventListener('coeiha:refresh-games', trigger);
-  }, []);
-
-  useEffect(() => {
-    fetch('/api/coeiha/games', { cache: 'no-store' })
-      .then((r) => r.json())
-      .then((data: GameEntry[]) => {
-        setGames(data);
-        // Switch to first populated tab if current tab has no games
-        setActiveTab((prev) => {
-          const hasGamesInCurrent = data.some((g) => g.collection === prev);
-          if (hasGamesInCurrent) return prev;
-          const first = COLLECTIONS.find((c) => data.some((g) => g.collection === c.key));
-          return first ? first.key : prev;
-        });
-      })
-      .catch(console.error);
-  }, [gamesRefresh]);
+    if (games.length === 0) return;
+    setActiveTab((prev) => {
+      if (games.some((g) => g.collection === prev)) return prev;
+      const first = COLLECTIONS.find((c) => games.some((g) => g.collection === c.key));
+      return first ? first.key : prev;
+    });
+  }, [games]);
 
   const isLive = status?.live === true;
   const channel = status?.channel || 'coeiha';

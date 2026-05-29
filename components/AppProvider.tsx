@@ -8,6 +8,7 @@ import {
   useState,
 } from 'react';
 import { translations, type Lang, type Translations } from '@/lib/i18n';
+import type { GameEntry, GameCollection } from '@/lib/db';
 
 type Theme = 'light' | 'dark';
 
@@ -20,6 +21,8 @@ export type AboutData = {
   links: string | null;
 };
 
+export { type GameEntry, type GameCollection };
+
 type Ctx = {
   theme: Theme;
   setTheme: (t: Theme) => void;
@@ -31,6 +34,9 @@ type Ctx = {
   // about content (editable by admin)
   about: AboutData;
   refreshAbout: () => Promise<void>;
+  // games
+  games: GameEntry[];
+  refreshGames: () => Promise<void>;
   // admin session
   adminPassword: string | null;
   isAdmin: boolean;
@@ -54,6 +60,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Lang>('pt');
   const [mounted, setMounted] = useState(false);
   const [about, setAbout] = useState<AboutData>(DEFAULT_ABOUT);
+  const [games, setGames] = useState<GameEntry[]>([]);
   const [adminPassword, setAdminPassword] = useState<string | null>(null);
 
   useEffect(() => {
@@ -92,9 +99,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const refreshGames = useCallback(async () => {
+    try {
+      const res = await fetch('/api/coeiha/games', { cache: 'no-store' });
+      if (res.ok) {
+        const data = (await res.json()) as GameEntry[];
+        setGames(data);
+      }
+    } catch (e) {
+      console.error('[refreshGames]', e);
+    }
+  }, []);
+
   useEffect(() => {
     refreshAbout();
-  }, [refreshAbout]);
+    refreshGames();
+  }, [refreshAbout, refreshGames]);
 
   const adminLogin = useCallback(async (password: string) => {
     try {
@@ -142,6 +162,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         t: translations[lang],
         about,
         refreshAbout,
+        games,
+        refreshGames,
         adminPassword,
         isAdmin: adminPassword !== null,
         adminLogin,
