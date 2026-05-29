@@ -1,9 +1,9 @@
 import { neon, type NeonQueryFunction } from '@neondatabase/serverless';
 
-let _sql: NeonQueryFunction<false, false> | null = null;
-
+// Do NOT cache _sql at module level. Neon's HTTP driver is stateless so
+// creating a new function per call is cheap. Caching caused stale connections
+// when DATABASE_URL was updated (warm lambda instances kept the old endpoint).
 function getSql(): NeonQueryFunction<false, false> {
-  if (_sql) return _sql;
   const connectionString =
     process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
   if (!connectionString) {
@@ -11,8 +11,7 @@ function getSql(): NeonQueryFunction<false, false> {
       'DATABASE_URL (or POSTGRES_URL) is not set. Connect Neon in the Vercel Storage tab.'
     );
   }
-  _sql = neon(connectionString);
-  return _sql;
+  return neon(connectionString);
 }
 
 /** Returns "host/dbname" (for diagnostics) without exposing credentials. */
@@ -38,11 +37,17 @@ export type Meta = {
 };
 
 /**
- * Lazy schema setup. Runs CREATE TABLE IF NOT EXISTS on first use of each
- * server instance. Cheap idempotent op — no migration tooling needed.
+ * Schema setup. Runs CREATE TABLE IF NOT EXISTS on every cold start.
+ * Keyed by connection string so a new DATABASE_URL always re-runs setup.
  */
+let schemaReadyFor = '';
 let schemaReady: Promise<void> | null = null;
 function ensureSchema(): Promise<void> {
+  const cs = process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
+  if (schemaReadyFor !== cs) {
+    schemaReady = null;
+    schemaReadyFor = cs;
+  }
   if (!schemaReady) {
     schemaReady = (async () => {
       await getSql()`
