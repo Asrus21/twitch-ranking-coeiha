@@ -768,6 +768,73 @@ export function AdminPanel() {
                 </div>
               </section>
 
+              {/* REMOVE POINTS */}
+              <section className="pt-6 border-t border-[var(--border)]">
+                <h4 className="font-display text-2xl mb-4 flex items-center gap-2">
+                  <span className="text-hotpink-500">✦</span> {lang === 'pt' ? 'Remover pontos' : 'Remove points'}
+                </h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-mono uppercase tracking-widest text-[var(--fg-muted)] mb-2">
+                      {t.admin.addPointsUser}
+                    </label>
+                    <input
+                      type="text"
+                      value={addUser}
+                      onChange={(e) => setAddUser(e.target.value)}
+                      placeholder="ex: asrus12"
+                      className="w-full px-4 py-3 rounded-lg bg-[var(--bg)] border border-[var(--border)] focus:border-hotpink-500 focus:outline-none font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-mono uppercase tracking-widest text-[var(--fg-muted)] mb-2">
+                      {lang === 'pt' ? 'Pontos a remover' : 'Points to remove'}
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={addPts}
+                      onChange={(e) => setAddPts(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                      className="w-full px-4 py-3 rounded-lg bg-[var(--bg)] border border-[var(--border)] focus:border-hotpink-500 focus:outline-none font-mono"
+                    />
+                  </div>
+                  <button
+                    disabled={addBusy || !addUser.trim()}
+                    onClick={async () => {
+                      if (!adminPassword || !addUser.trim()) return;
+                      setAddBusy(true);
+                      setError(null);
+                      setMsg(null);
+                      try {
+                        const res = await fetch('/api/coeiha/admin-add-points', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ password: adminPassword, username: addUser.trim(), points: -addPts }),
+                        });
+                        if (res.ok) {
+                          const data = await res.json();
+                          setMsg(`${lang === 'pt' ? 'Removido' : 'Removed'}: ${data.username} → ${data.total} pts`);
+                          setAddUser('');
+                          setAddPts(1);
+                          window.dispatchEvent(new CustomEvent('coeiha:refresh-ranking'));
+                          setTimeout(() => setMsg(null), 3000);
+                        } else {
+                          const data = await res.json().catch(() => ({}));
+                          setError(data.error || (lang === 'pt' ? 'Erro ao remover pontos' : 'Failed to remove points'));
+                        }
+                      } catch {
+                        setError(lang === 'pt' ? 'Erro ao remover pontos' : 'Failed to remove points');
+                      } finally {
+                        setAddBusy(false);
+                      }
+                    }}
+                    className="w-full px-4 py-3 rounded-full border border-red-500 text-red-500 font-bold uppercase text-xs tracking-widest hover:bg-red-500 hover:text-white disabled:opacity-50 transition-all"
+                  >
+                    {addBusy ? '...' : (lang === 'pt' ? '− Remover pontos' : '− Remove points')}
+                  </button>
+                </div>
+              </section>
+
               {/* REMOVE NICK */}
               <section className="pt-6 border-t border-[var(--border)]">
                 <h4 className="font-display text-2xl mb-4 flex items-center gap-2">

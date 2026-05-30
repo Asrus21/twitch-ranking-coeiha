@@ -223,30 +223,41 @@ const DEFAULT_AVATAR =
 
 export async function addPointsManually(params: {
   username: string;
-  points: number;
+  points: number; // positive = add, negative = subtract
   avatar?: string | null;
-}): Promise<{ username: string; total: number }> {
+}): Promise<{ username: string; total: number } | null> {
   await ensureSchema();
   const username = params.username.toLowerCase().trim();
-  const pts = Math.max(1, Math.floor(params.points));
+  const pts = Math.floor(params.points);
+  if (pts === 0) return null;
   const avatar = params.avatar || DEFAULT_AVATAR;
 
-  // When a real avatar was resolved, refresh it on conflict as well — this
-  // also fixes older rows that were created with the placeholder.
-  const rows = (await getSql()`
-    INSERT INTO pontos (username, display_name, avatar, points, updated_at)
-    VALUES (${username}, ${params.username.trim()}, ${avatar}, ${pts}, NOW())
-    ON CONFLICT (username) DO UPDATE
-      SET points = pontos.points + ${pts},
-          avatar = CASE
-            WHEN ${avatar} <> ${DEFAULT_AVATAR} THEN ${avatar}
-            ELSE pontos.avatar
-          END,
-          updated_at = NOW()
-    RETURNING username, points
-  `) as { username: string; points: number }[];
-
-  return { username: rows[0].username, total: rows[0].points };
+  if (pts > 0) {
+    const rows = (await getSql()`
+      INSERT INTO pontos (username, display_name, avatar, points, updated_at)
+      VALUES (${username}, ${params.username.trim()}, ${avatar}, ${pts}, NOW())
+      ON CONFLICT (username) DO UPDATE
+        SET points = pontos.points + ${pts},
+            avatar = CASE
+              WHEN ${avatar} <> ${DEFAULT_AVATAR} THEN ${avatar}
+              ELSE pontos.avatar
+            END,
+            updated_at = NOW()
+      RETURNING username, points
+    `) as { username: string; points: number }[];
+    return { username: rows[0].username, total: rows[0].points };
+  } else {
+    // Subtract — only if user exists, minimum 0
+    const absPts = Math.abs(pts);
+    const rows = (await getSql()`
+      UPDATE pontos
+      SET points = GREATEST(0, points - ${absPts}), updated_at = NOW()
+      WHERE username = ${username}
+      RETURNING username, points
+    `) as { username: string; points: number }[];
+    if (rows.length === 0) return null;
+    return { username: rows[0].username, total: rows[0].points };
+  }
 }
 
 export async function removeUser(username: string): Promise<boolean> {

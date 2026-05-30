@@ -34,12 +34,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'username required' }, { status: 400 });
     }
     const pts = parseInt(points, 10);
-    if (!pts || pts < 1) {
-      return NextResponse.json({ error: 'points must be >= 1' }, { status: 400 });
+    if (!pts || pts === 0) {
+      return NextResponse.json({ error: 'points must be non-zero' }, { status: 400 });
     }
 
-    const avatar = await resolveAvatar(username.trim());
+    const avatar = pts > 0 ? await resolveAvatar(username.trim()) : null;
     const result = await addPointsManually({ username: username.trim(), points: pts, avatar });
+    if (!result) {
+      return NextResponse.json({ error: 'user not found' }, { status: 404 });
+    }
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
     console.error('[/api/admin-add-points] error', err);
