@@ -93,8 +93,8 @@ function ensureSchema(): Promise<void> {
 }
 
 /**
- * Records a !ponto. Returns {recorded:true} if it's the user's first time
- * in the current ranking window, {recorded:false} if they already clocked in.
+ * Records a !ponto. Always adds +1 point (accumulates across lives).
+ * The "once per session" limit is enforced by the StreamElements widget cooldown.
  */
 export async function recordPonto(params: {
   username: string;
@@ -104,25 +104,25 @@ export async function recordPonto(params: {
   await ensureSchema();
   const username = params.username.toLowerCase();
 
-  // Atomic: insert if missing, do nothing if present. RETURNING tells us
-  // which path was taken — if a row comes back, it's a new insert.
-  const inserted = (await getSql()`
-    INSERT INTO pontos (username, display_name, avatar, points)
-    VALUES (${username}, ${params.displayName}, ${params.avatar}, 1)
-    ON CONFLICT (username) DO NOTHING
+  const DEFAULT_AVATAR = 'https://static-cdn.jtvnw.net/jtv_user_pictures/xarth/404_user_300x300.png';
+  const avatar = params.avatar || DEFAULT_AVATAR;
+
+  // Always +1. First time: insert with 1. Subsequent times: increment.
+  const rows = (await getSql()`
+    INSERT INTO pontos (username, display_name, avatar, points, updated_at)
+    VALUES (${username}, ${params.displayName}, ${avatar}, 1, NOW())
+    ON CONFLICT (username) DO UPDATE
+      SET points     = pontos.points + 1,
+          updated_at = NOW(),
+          display_name = EXCLUDED.display_name,
+          avatar = CASE
+            WHEN ${avatar} <> ${DEFAULT_AVATAR} THEN ${avatar}
+            ELSE pontos.avatar
+          END
     RETURNING points
   `) as { points: number }[];
 
-  if (inserted.length > 0) {
-    return { recorded: true, total: inserted[0].points };
-  }
-
-  // Already existed — fetch current total without incrementing
-  const existing = (await getSql()`
-    SELECT points FROM pontos WHERE username = ${username}
-  `) as { points: number }[];
-
-  return { recorded: false, total: existing[0]?.points ?? 0 };
+  return { recorded: true, total: rows[0]?.points ?? 1 };
 }
 
 export async function getRanking(limit = 100): Promise<RankingEntry[]> {
